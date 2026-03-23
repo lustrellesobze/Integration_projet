@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Str;
-use Illuminate\Database\Eloquent\Factories\HasFactory; // ✅ ajouter ceci
+use Laravel\Sanctum\HasApiTokens; // ✅ ajouter ceci
 
 class Personnel extends Authenticatable
 {
@@ -14,7 +14,9 @@ class Personnel extends Authenticatable
     protected $table = 'personnels';
 
     protected $primaryKey = 'id'; // ⚡ important pour UUID
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -32,7 +34,7 @@ class Personnel extends Authenticatable
     protected static function booted()
     {
         static::creating(function ($model) {
-            if (!$model->getKey()) {
+            if (! $model->getKey()) {
                 $model->{$model->getKeyName()} = (string) Str::uuid();
             }
         });

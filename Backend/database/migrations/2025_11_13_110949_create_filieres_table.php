@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('filieres', function (Blueprint $table) {
-            $table->string('code_filiere') -> primary();
-            $table->string('label_filiere',20);
+            $table->string('code_filiere')->primary();
+            $table->string('label_filiere', 20);
             $table->string('desc_filiere')->nullable();
             $table->timestamps();
         });

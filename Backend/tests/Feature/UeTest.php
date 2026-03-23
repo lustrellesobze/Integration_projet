@@ -2,16 +2,16 @@
 
 namespace Tests\Feature;
 
-use App\Models\Ue;
-use App\Models\Niveau;
 use App\Models\Filiere;
+use App\Models\Niveau;
+use App\Models\Ue;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Tests\Traits\ApiTokenTrait;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class UeTest extends TestCase
 {
-    use RefreshDatabase, ApiTokenTrait;
+    use ApiTokenTrait, RefreshDatabase;
 
     protected $niveau;
 
@@ -22,8 +22,8 @@ class UeTest extends TestCase
 
         $filiere = Filiere::firstOrCreate(['code_filiere' => 'FIL-INF'], ['label_filiere' => 'Informatique']);
         $this->niveau = Niveau::firstOrCreate(['code_niveau' => 'NIV-L3'], [
-            'label_niveau' => 'Licence 3', 
-            'code_filiere' => $filiere->code_filiere
+            'label_niveau' => 'Licence 3',
+            'code_filiere' => $filiere->code_filiere,
         ]);
     }
 
@@ -35,15 +35,15 @@ class UeTest extends TestCase
         $response = $this->getJson('/api/ues'); // Corrigé : ues au lieu de Ue
 
         $response->assertStatus(200)
-                 ->assertJsonStructure(['data', 'current_page', 'last_page']);
+            ->assertJsonStructure(['data', 'current_page', 'last_page']);
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
     public function test_can_create_ue()
     {
         $payload = [
-            'code_ue'     => 'UE-MATH1',
-            'label_ue'    => 'Mathématiques discrètes',
+            'code_ue' => 'UE-MATH1',
+            'label_ue' => 'Mathématiques discrètes',
             'code_niveau' => $this->niveau->code_niveau,
         ];
 
@@ -57,7 +57,7 @@ class UeTest extends TestCase
     public function test_can_show_specific_ue()
     {
         $ue = Ue::create([
-            'code_ue' => 'UE-INF501', 'label_ue' => 'Réseaux', 'code_niveau' => $this->niveau->code_niveau
+            'code_ue' => 'UE-INF501', 'label_ue' => 'Réseaux', 'code_niveau' => $this->niveau->code_niveau,
         ]);
 
         $response = $this->getJson("/api/ues/{$ue->code_ue}"); // Déjà correct
@@ -69,7 +69,7 @@ class UeTest extends TestCase
     public function test_can_delete_ue()
     {
         $ue = Ue::create([
-            'code_ue' => 'UE-DELETE', 'label_ue' => 'Suppr', 'code_niveau' => $this->niveau->code_niveau
+            'code_ue' => 'UE-DELETE', 'label_ue' => 'Suppr', 'code_niveau' => $this->niveau->code_niveau,
         ]);
 
         $response = $this->deleteJson("/api/ues/{$ue->code_ue}"); // Corrigé : ues au lieu de Ue

@@ -2,26 +2,26 @@
 
 namespace Tests\Feature;
 
-use App\Models\Niveau;
 use App\Models\Filiere;
+use App\Models\Niveau;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Tests\Traits\ApiTokenTrait;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class NiveauTest extends TestCase
 {
-    use RefreshDatabase, ApiTokenTrait;
+    use ApiTokenTrait, RefreshDatabase;
 
     protected $filiere;
 
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // 1. Authentification
         $this->authenticatePersonnel();
 
-        // 2. Utilisation de la factory sans forcer le code_filiere 
+        // 2. Utilisation de la factory sans forcer le code_filiere
         // pour éviter les conflits d'unicité entre les tests
         $this->filiere = Filiere::factory()->create();
     }
@@ -34,13 +34,13 @@ class NiveauTest extends TestCase
         $response = $this->getJson('/api/niveaux');
 
         $response->assertStatus(200)
-                 ->assertJsonStructure([
-                     'data',
-                     'current_page',
-                     'last_page',
-                     'per_page'
-                 ])
-                 ->assertJsonCount(10, 'data'); 
+            ->assertJsonStructure([
+                'data',
+                'current_page',
+                'last_page',
+                'per_page',
+            ])
+            ->assertJsonCount(10, 'data');
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
@@ -48,18 +48,18 @@ class NiveauTest extends TestCase
     {
         $payload = [
             'label_niveau' => 'Licence 3 Informatique',
-            'desc_niveau'  => 'Troisième année de licence',
+            'desc_niveau' => 'Troisième année de licence',
             'code_filiere' => $this->filiere->code_filiere,
         ];
 
         $response = $this->postJson('/api/niveaux', $payload);
 
         $response->assertStatus(201)
-                 ->assertJsonPath('data.label_niveau', 'Licence 3 Informatique');
+            ->assertJsonPath('data.label_niveau', 'Licence 3 Informatique');
 
         $this->assertDatabaseHas('niveaux', [
             'label_niveau' => 'Licence 3 Informatique',
-            'code_filiere' => $this->filiere->code_filiere
+            'code_filiere' => $this->filiere->code_filiere,
         ]);
     }
 
@@ -67,13 +67,13 @@ class NiveauTest extends TestCase
     public function test_can_show_specific_niveau()
     {
         $niveau = Niveau::factory()->create([
-            'label_niveau' => 'Master 1 Architecture'
+            'label_niveau' => 'Master 1 Architecture',
         ]);
 
         $response = $this->getJson("/api/niveaux/{$niveau->code_niveau}");
 
         $response->assertStatus(200)
-                 ->assertJsonPath('data.label_niveau', 'Master 1 Architecture');
+            ->assertJsonPath('data.label_niveau', 'Master 1 Architecture');
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
@@ -82,13 +82,13 @@ class NiveauTest extends TestCase
         $niveau = Niveau::factory()->create(['label_niveau' => 'Ancien Niveau']);
 
         $response = $this->putJson("/api/niveaux/{$niveau->code_niveau}", [
-            'label_niveau' => 'Niveau Mis à Jour'
+            'label_niveau' => 'Niveau Mis à Jour',
         ]);
 
         $response->assertStatus(200);
         $this->assertDatabaseHas('niveaux', [
-            'code_niveau'  => $niveau->code_niveau,
-            'label_niveau' => 'Niveau Mis à Jour'
+            'code_niveau' => $niveau->code_niveau,
+            'label_niveau' => 'Niveau Mis à Jour',
         ]);
     }
 
@@ -100,10 +100,10 @@ class NiveauTest extends TestCase
         $response = $this->deleteJson("/api/niveaux/{$niveau->code_niveau}");
 
         $response->assertStatus(200)
-                 ->assertJson(['message' => 'Niveau supprimé avec succès']);
+            ->assertJson(['message' => 'Niveau supprimé avec succès']);
 
         $this->assertDatabaseMissing('niveaux', [
-            'code_niveau' => $niveau->code_niveau
+            'code_niveau' => $niveau->code_niveau,
         ]);
     }
 
@@ -112,12 +112,12 @@ class NiveauTest extends TestCase
     {
         $payload = [
             'label_niveau' => 'Niveau Invalide',
-            'code_filiere' => 'NON-EXISTENT-FILIERE'
+            'code_filiere' => 'NON-EXISTENT-FILIERE',
         ];
 
         $response = $this->postJson('/api/niveaux', $payload);
 
         $response->assertStatus(422)
-                 ->assertJsonValidationErrors(['code_filiere']);
+            ->assertJsonValidationErrors(['code_filiere']);
     }
 }

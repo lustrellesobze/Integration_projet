@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('ues', function (Blueprint $table) {
-           $table->string('code_ue', 20)->primary();
+            $table->string('code_ue', 20)->primary();
             $table->string('label_ue', 100);
             $table->text('desc_ue', 256)->nullable();
             $table->integer('code_niveau')->unsigned();

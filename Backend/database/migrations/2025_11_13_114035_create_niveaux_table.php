@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('label_niveau', 100);
             $table->text('desc_niveau', 256)->nullable();
             $table->string('code_filiere', 100);
-            $table->foreign("code_filiere")->references("code_filiere")->on("filieres")->onDelete("cascade");
+            $table->foreign('code_filiere')->references('code_filiere')->on('filieres')->onDelete('cascade');
             $table->timestamps();
         });
     }

@@ -15,8 +15,8 @@ return new class extends Migration
             // 🔹 ID UUID unique pour chaque ligne
             $table->uuid('id')->primary();
 
-            $table->string('code_pers',50);
-            $table->string('code_ec',50);
+            $table->string('code_pers', 50);
+            $table->string('code_ec', 50);
             $table->date('date_ens');
             $table->timestamps();
 

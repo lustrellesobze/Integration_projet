@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;  
 
 class Ec extends Model
 {
@@ -59,7 +59,7 @@ class Ec extends Model
     public function getImageEcUrlAttribute()
     {
         return $this->image_ec
-            ? asset('storage/' . $this->image_ec)
+            ? asset('storage/'.$this->image_ec)
             : null;
     }
 }

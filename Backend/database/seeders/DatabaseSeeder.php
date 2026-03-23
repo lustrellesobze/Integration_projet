@@ -2,13 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
+use App\Models\Ec;
 use App\Models\Filiere;
 use App\Models\Niveau;
-use App\Models\Salle;
-use App\Models\Ec;
-use App\Models\Programmation;
 use App\Models\Personnel;
+use App\Models\Programmation;
+use App\Models\Salle;
 use App\Models\Ue;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;

@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 class Enseigne extends Model
@@ -15,6 +15,7 @@ class Enseigne extends Model
     protected $primaryKey = 'id';
 
     public $incrementing = false; // UUID n’est pas auto-incrément
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -29,7 +30,7 @@ class Enseigne extends Model
     protected static function booted()
     {
         static::creating(function ($model) {
-            if (!$model->id) {
+            if (! $model->id) {
                 $model->id = (string) Str::uuid();
             }
         });

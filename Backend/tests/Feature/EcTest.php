@@ -3,25 +3,24 @@
 namespace Tests\Feature;
 
 use App\Models\Ec;
-use App\Models\Ue;
-use App\Models\Niveau;
 use App\Models\Filiere;
+use App\Models\Niveau;
+use App\Models\Ue;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 use Tests\Traits\ApiTokenTrait;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 
 class EcTest extends TestCase
 {
-    use RefreshDatabase, ApiTokenTrait;
+    use ApiTokenTrait, RefreshDatabase;
 
     protected $ue;
 
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         $this->authenticatePersonnel();
 
         // Utilisation de firstOrCreate pour éviter les erreurs de duplication
@@ -34,16 +33,16 @@ class EcTest extends TestCase
             ['code_niveau' => 'NIV-L3'],
             [
                 'label_niveau' => 'Licence 3',
-                'code_filiere' => $filiere->code_filiere
+                'code_filiere' => $filiere->code_filiere,
             ]
         );
 
         $this->ue = Ue::firstOrCreate(
             ['code_ue' => 'UE-INF101'],
             [
-                'label_ue'    => 'Informatique Fondamentale',
-                'desc_ue'     => 'Description de test',
-                'code_niveau' => $niveau->code_niveau
+                'label_ue' => 'Informatique Fondamentale',
+                'desc_ue' => 'Description de test',
+                'code_niveau' => $niveau->code_niveau,
             ]
         );
     }
@@ -54,12 +53,12 @@ class EcTest extends TestCase
         Storage::fake('public');
 
         $payload = [
-            'code_ec'  => 'EC-ALGO2',
+            'code_ec' => 'EC-ALGO2',
             'label_ec' => 'Algorithmique Avancée',
-            'desc_ec'  => 'Complexité et structures',
-            'nbh_ec'   => 45,
-            'nbc_ec'   => 5,
-            'code_ue'  => $this->ue->code_ue,
+            'desc_ec' => 'Complexité et structures',
+            'nbh_ec' => 45,
+            'nbc_ec' => 5,
+            'code_ue' => $this->ue->code_ue,
         ];
 
         $response = $this->postJson('/api/ecs', $payload);
@@ -79,22 +78,22 @@ class EcTest extends TestCase
         $response = $this->getJson('/api/ecs');
 
         $response->assertStatus(200)
-                 ->assertJsonStructure(['data', 'meta']);
+            ->assertJsonStructure(['data', 'meta']);
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
     public function test_can_update_ec_details()
     {
         $ec = Ec::create([
-            'code_ec'  => 'EC-UPDATE',
+            'code_ec' => 'EC-UPDATE',
             'label_ec' => 'Ancien Label',
-            'nbh_ec'   => 20,
-            'nbc_ec'   => 2,
-            'code_ue'  => $this->ue->code_ue
+            'nbh_ec' => 20,
+            'nbc_ec' => 2,
+            'code_ue' => $this->ue->code_ue,
         ]);
 
         $response = $this->putJson("/api/ecs/{$ec->code_ec}", [
-            'label_ec' => 'Nouveau Label'
+            'label_ec' => 'Nouveau Label',
         ]);
 
         $response->assertStatus(200);
@@ -109,12 +108,12 @@ class EcTest extends TestCase
         Storage::disk('public')->put($path, 'dummy content');
 
         $ec = Ec::create([
-            'code_ec'  => 'EC-BYE',
+            'code_ec' => 'EC-BYE',
             'label_ec' => 'A supprimer',
-            'nbh_ec'   => 10,
-            'nbc_ec'   => 1,
-            'code_ue'  => $this->ue->code_ue,
-            'image_ec' => $path
+            'nbh_ec' => 10,
+            'nbc_ec' => 1,
+            'code_ue' => $this->ue->code_ue,
+            'image_ec' => $path,
         ]);
 
         $response = $this->deleteJson("/api/ecs/{$ec->code_ec}");
@@ -128,11 +127,11 @@ class EcTest extends TestCase
     public function test_download_pdf_fails_if_no_image()
     {
         $ec = Ec::create([
-            'code_ec'  => 'EC-NO-IMG',
+            'code_ec' => 'EC-NO-IMG',
             'label_ec' => 'Sans Image',
-            'nbh_ec'   => 10,
-            'nbc_ec'   => 1,
-            'code_ue'  => $this->ue->code_ue
+            'nbh_ec' => 10,
+            'nbc_ec' => 1,
+            'code_ue' => $this->ue->code_ue,
         ]);
 
         $response = $this->getJson("/api/ecs/download-image/{$ec->code_ec}");

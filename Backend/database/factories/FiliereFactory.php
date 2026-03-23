@@ -18,7 +18,7 @@ class FiliereFactory extends Factory
     {
         return [
             'code_filiere' => $this->faker->unique()->bothify('FILIERE###'),
-            'label_filiere' => $this->faker->words(1,true),
+            'label_filiere' => $this->faker->words(1, true),
             'desc_filiere' => $this->faker->sentence(),
         ];
     }

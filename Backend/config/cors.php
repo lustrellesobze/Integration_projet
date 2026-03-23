@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'paths' => ['api/*','filiere', 'sanctum/csrf-cookie'],
+    'paths' => ['api/*', 'filiere', 'sanctum/csrf-cookie'],
     'allowed_methods' => ['*'],
     'allowed_origins' => ['*'], // tu peux remplacer par http://localhost:4200
     'allowed_origins_patterns' => [],
@@ -11,4 +11,4 @@ return [
     'supports_credentials' => true,
 ];
 
-//ISO9126 : Norme de definition d'un logiciel 
+// ISO9126 : Norme de definition d'un logiciel

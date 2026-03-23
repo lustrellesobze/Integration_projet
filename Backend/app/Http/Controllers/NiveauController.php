@@ -10,9 +10,10 @@ class NiveauController extends Controller
 {
     public function index()
     {
-        Log::channel('audit')->info("Consultation de la liste des niveaux.");
+        Log::channel('audit')->info('Consultation de la liste des niveaux.');
         // Pagination ajoutée pour la cohérence avec les autres ressources
-        $niveaux = Niveau::paginate(10); 
+        $niveaux = Niveau::paginate(10);
+
         return response()->json($niveaux, 200);
     }
 
@@ -22,15 +23,15 @@ class NiveauController extends Controller
 
         $validateData = $request->validate([
             'label_niveau' => 'required|min:5|string',
-            'desc_niveau'  => 'nullable|string',
-            'code_filiere' => 'required|string|exists:filieres,code_filiere'
+            'desc_niveau' => 'nullable|string',
+            'code_filiere' => 'required|string|exists:filieres,code_filiere',
         ]);
 
         $niveau = Niveau::create($validateData);
 
         return response()->json([
             'message' => 'Niveau créé avec succès',
-            'data'    => $niveau
+            'data' => $niveau,
         ], 201);
     }
 
@@ -45,22 +46,22 @@ class NiveauController extends Controller
 
         $validateData = $request->validate([
             'label_niveau' => 'sometimes|string|min:5',
-            'desc_niveau'  => 'nullable|string',
-            'code_filiere' => 'sometimes|string|exists:filieres,code_filiere'
+            'desc_niveau' => 'nullable|string',
+            'code_filiere' => 'sometimes|string|exists:filieres,code_filiere',
         ]);
 
         $niveau->update($validateData);
 
         return response()->json([
             'message' => 'Niveau mis à jour avec succès',
-            'data'    => $niveau
+            'data' => $niveau,
         ], 200);
     }
 
     public function destroy(Niveau $niveau)
     {
         Log::channel('audit')->notice("Suppression du niveau ID: {$niveau->code_niveau}");
-        
+
         $niveau->delete();
 
         return response()->json(['message' => 'Niveau supprimé avec succès'], 200);

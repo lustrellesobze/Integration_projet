@@ -13,9 +13,10 @@ class EnseigneController extends Controller
      */
     public function index()
     {
-        Log::channel('audit')->info("Consultation de la liste des affectations (Enseignes).");
-        
+        Log::channel('audit')->info('Consultation de la liste des affectations (Enseignes).');
+
         $enseignes = Enseigne::with(['personnel', 'ec'])->get();
+
         return response()->json(['data' => $enseignes], 200);
     }
 
@@ -28,32 +29,33 @@ class EnseigneController extends Controller
 
         $validateData = $request->validate([
             'code_pers' => 'required|exists:personnels,code_pers',
-            'code_ec'   => 'required|exists:ecs,code_ec',
-            'date_ens'  => 'required|date',
+            'code_ec' => 'required|exists:ecs,code_ec',
+            'date_ens' => 'required|date',
         ]);
 
         // Vérifie si la combinaison existe déjà
         $exists = Enseigne::where('code_pers', $validateData['code_pers'])
-                          ->where('code_ec', $validateData['code_ec'])
-                          ->first();
+            ->where('code_ec', $validateData['code_ec'])
+            ->first();
 
         if ($exists) {
-            Log::channel('audit')->warning("Échec création affectation : Doublon détecté.", $validateData);
+            Log::channel('audit')->warning('Échec création affectation : Doublon détecté.', $validateData);
+
             return response()->json(['message' => 'Cette affectation existe déjà'], 409);
         }
 
         // Crée l'enseigne avec UUID généré automatiquement
         $enseigne = Enseigne::create($validateData);
 
-        Log::channel('audit')->notice("Nouvelle affectation créée avec succès.", [
+        Log::channel('audit')->notice('Nouvelle affectation créée avec succès.', [
             'id' => $enseigne->id,
             'code_pers' => $enseigne->code_pers,
-            'code_ec' => $enseigne->code_ec
+            'code_ec' => $enseigne->code_ec,
         ]);
 
         return response()->json([
             'message' => 'Enseigne créée avec succès',
-            'data' => $enseigne
+            'data' => $enseigne,
         ], 201);
     }
 
@@ -64,8 +66,9 @@ class EnseigneController extends Controller
     {
         $enseigne = Enseigne::with(['personnel', 'ec'])->find($id);
 
-        if (!$enseigne) {
+        if (! $enseigne) {
             Log::channel('audit')->warning("Consultation affectation : ID $id introuvable.");
+
             return response()->json(['message' => 'Enseigne introuvable'], 404);
         }
 
@@ -81,8 +84,9 @@ class EnseigneController extends Controller
 
         $enseigne = Enseigne::find($id);
 
-        if (!$enseigne) {
+        if (! $enseigne) {
             Log::channel('audit')->error("Mise à jour affectation : ID $id introuvable.");
+
             return response()->json(['message' => 'Enseigne introuvable'], 404);
         }
 
@@ -96,7 +100,7 @@ class EnseigneController extends Controller
 
         return response()->json([
             'message' => 'Enseigne mise à jour avec succès',
-            'data' => $enseigne
+            'data' => $enseigne,
         ], 200);
     }
 
@@ -109,8 +113,9 @@ class EnseigneController extends Controller
 
         $enseigne = Enseigne::find($id);
 
-        if (!$enseigne) {
+        if (! $enseigne) {
             Log::channel('audit')->warning("Suppression affectation : ID $id introuvable.");
+
             return response()->json(['message' => 'Enseigne introuvable'], 404);
         }
 

@@ -13,6 +13,7 @@ class ProgrammationController extends Controller
     public function index()
     {
         $programmations = Programmation::all();
+
         return response()->json(['data' => $programmations], 200);
     }
 
@@ -22,21 +23,21 @@ class ProgrammationController extends Controller
     public function store(Request $request)
     {
         $validateData = $request->validate([
-            'code_ec'      => 'required|exists:ecs,code_ec',
-            'num_salle'    => 'required|exists:salles,num_salle',
-            'code_pers'    => 'required|exists:personnels,code_pers',
-            'date'         => 'required|date',
-            'heure_debut'  => 'required|date_format:H:i',
-            'heure_fin'    => 'required|date_format:H:i|after:heure_debut',
-            'nbre_heure'   => 'required|integer|min:1',
-            'status'       => 'required|string|in:Programmé,Annulé,Terminé',
+            'code_ec' => 'required|exists:ecs,code_ec',
+            'num_salle' => 'required|exists:salles,num_salle',
+            'code_pers' => 'required|exists:personnels,code_pers',
+            'date' => 'required|date',
+            'heure_debut' => 'required|date_format:H:i',
+            'heure_fin' => 'required|date_format:H:i|after:heure_debut',
+            'nbre_heure' => 'required|integer|min:1',
+            'status' => 'required|string|in:Programmé,Annulé,Terminé',
         ]);
 
         $programmation = Programmation::create($validateData);
 
         return response()->json([
             'message' => 'Programmation créée avec succès',
-            'data' => $programmation
+            'data' => $programmation,
         ], 201);
     }
 
@@ -47,7 +48,7 @@ class ProgrammationController extends Controller
     {
         $programmation = Programmation::find($id);
 
-        if (!$programmation) {
+        if (! $programmation) {
             return response()->json(['message' => 'Programmation introuvable'], 404);
         }
 
@@ -61,26 +62,26 @@ class ProgrammationController extends Controller
     {
         $programmation = Programmation::find($id);
 
-        if (!$programmation) {
+        if (! $programmation) {
             return response()->json(['message' => 'Programmation introuvable'], 404);
         }
 
         $validateData = $request->validate([
-            'code_ec'      => 'sometimes|exists:ecs,code_ec',
-            'num_salle'    => 'sometimes|exists:salles,num_salle',
-            'code_pers'    => 'sometimes|exists:personnels,code_pers',
-            'date'         => 'sometimes|date',
-            'heure_debut'  => 'sometimes|date_format:H:i',
-            'heure_fin'    => 'sometimes|date_format:H:i|after:heure_debut',
-            'nbre_heure'   => 'sometimes|integer|min:1',
-            'status'       => 'sometimes|string|in:Programmé,Annulé,Terminé',
+            'code_ec' => 'sometimes|exists:ecs,code_ec',
+            'num_salle' => 'sometimes|exists:salles,num_salle',
+            'code_pers' => 'sometimes|exists:personnels,code_pers',
+            'date' => 'sometimes|date',
+            'heure_debut' => 'sometimes|date_format:H:i',
+            'heure_fin' => 'sometimes|date_format:H:i|after:heure_debut',
+            'nbre_heure' => 'sometimes|integer|min:1',
+            'status' => 'sometimes|string|in:Programmé,Annulé,Terminé',
         ]);
 
         $programmation->update($validateData);
 
         return response()->json([
             'message' => 'Programmation mise à jour avec succès',
-            'data' => $programmation
+            'data' => $programmation,
         ], 200);
     }
 
@@ -91,7 +92,7 @@ class ProgrammationController extends Controller
     {
         $programmation = Programmation::find($id);
 
-        if (!$programmation) {
+        if (! $programmation) {
             return response()->json(['message' => 'Programmation introuvable'], 404);
         }
 

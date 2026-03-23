@@ -14,6 +14,7 @@ class PersonnelCredentialsMail extends Mailable
 
     // On déclare les variables publiques pour qu'elles soient accessibles dans la vue Blade
     public $personnel;
+
     public $plainPassword;
 
     /**

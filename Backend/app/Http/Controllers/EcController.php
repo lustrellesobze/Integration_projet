@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ec;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log; 
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class EcController extends Controller
 {
@@ -15,20 +15,20 @@ class EcController extends Controller
      */
     public function index(Request $request)
     {
-        Log::channel('audit')->info("Début de la récupération de la liste des ECs.", ['per_page' => $request->get('per_page')]);
+        Log::channel('audit')->info('Début de la récupération de la liste des ECs.', ['per_page' => $request->get('per_page')]);
 
         $perPage = $request->get('per_page', 10);
         $ecs = Ec::paginate($perPage);
 
-        Log::channel('audit')->info("Liste des ECs récupérée avec succès.", ['total' => $ecs->total(), 'current_page' => $ecs->currentPage()]);
+        Log::channel('audit')->info('Liste des ECs récupérée avec succès.', ['total' => $ecs->total(), 'current_page' => $ecs->currentPage()]);
 
         return response()->json([
             'data' => $ecs->items(),
             'meta' => [
                 'current_page' => $ecs->currentPage(),
-                'per_page'     => $ecs->perPage(),
-                'total'        => $ecs->total(),
-                'last_page'    => $ecs->lastPage(),
+                'per_page' => $ecs->perPage(),
+                'total' => $ecs->total(),
+                'last_page' => $ecs->lastPage(),
             ],
         ], 200);
     }
@@ -55,16 +55,16 @@ class EcController extends Controller
         if ($request->hasFile('image_ec')) {
             $path = $request->file('image_ec')->store('ecs', 'public');
             $validatedData['image_ec'] = $path;
-            Log::channel('audit')->info("Image téléchargée avec succès pour le nouvel EC.", ['path' => $path]);
+            Log::channel('audit')->info('Image téléchargée avec succès pour le nouvel EC.', ['path' => $path]);
         }
 
         $ec = Ec::create($validatedData);
 
-        Log::channel('audit')->notice("EC créé avec succès dans la base de données.", ['id' => $ec->id, 'code_ec' => $ec->code_ec]);
+        Log::channel('audit')->notice('EC créé avec succès dans la base de données.', ['id' => $ec->id, 'code_ec' => $ec->code_ec]);
 
         return response()->json([
             'message' => 'EC créé avec succès',
-            'data' => $ec
+            'data' => $ec,
         ], 201);
     }
 
@@ -77,17 +77,18 @@ class EcController extends Controller
 
         $ec = Ec::find($id);
 
-        if (!$ec) {
+        if (! $ec) {
             Log::channel('audit')->warning("Échec de la récupération : EC ID $id introuvable.");
+
             return response()->json([
-                'message' => 'EC introuvable'
+                'message' => 'EC introuvable',
             ], 404);
         }
 
         Log::channel('audit')->info("EC ID $id récupéré avec succès.");
 
         return response()->json([
-            'data' => $ec
+            'data' => $ec,
         ], 200);
     }
 
@@ -100,20 +101,21 @@ class EcController extends Controller
 
         $ec = Ec::find($id);
 
-        if (!$ec) {
+        if (! $ec) {
             Log::channel('audit')->error("Mise à jour avortée : EC ID $id introuvable.");
+
             return response()->json([
-                'message' => 'EC introuvable'
+                'message' => 'EC introuvable',
             ], 404);
         }
 
         $validatedData = $request->validate([
-            'code_ec'  => 'sometimes|min:5|string|unique:ecs,code_ec,' . $id . ',code_ec',
+            'code_ec' => 'sometimes|min:5|string|unique:ecs,code_ec,'.$id.',code_ec',
             'label_ec' => 'sometimes|string',
-            'desc_ec'  => 'nullable|string',
-            'nbh_ec'   => 'sometimes|integer|min:1',
-            'nbc_ec'   => 'sometimes|integer|min:1',
-            'code_ue'  => 'sometimes|exists:ues,code_ue',
+            'desc_ec' => 'nullable|string',
+            'nbh_ec' => 'sometimes|integer|min:1',
+            'nbc_ec' => 'sometimes|integer|min:1',
+            'code_ue' => 'sometimes|exists:ues,code_ue',
             'image_ec' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
@@ -125,7 +127,7 @@ class EcController extends Controller
 
             $path = $request->file('image_ec')->store('ecs', 'public');
             $validatedData['image_ec'] = $path;
-            Log::channel('audit')->info("Nouvelle image stockée.", ['path' => $path]);
+            Log::channel('audit')->info('Nouvelle image stockée.', ['path' => $path]);
         }
 
         $ec->update($validatedData);
@@ -133,7 +135,7 @@ class EcController extends Controller
 
         return response()->json([
             'message' => 'EC mis à jour avec succès',
-            'data' => $ec
+            'data' => $ec,
         ], 200);
     }
 
@@ -146,10 +148,11 @@ class EcController extends Controller
 
         $ec = Ec::find($id);
 
-        if (!$ec) {
+        if (! $ec) {
             Log::channel('audit')->warning("Suppression impossible : EC ID $id n'existe pas.");
+
             return response()->json([
-                'message' => 'EC introuvable'
+                'message' => 'EC introuvable',
             ], 404);
         }
 
@@ -162,34 +165,35 @@ class EcController extends Controller
         Log::channel('audit')->notice("EC ID $id supprimé définitivement.");
 
         return response()->json([
-            'message' => 'EC supprimé avec succès'
+            'message' => 'EC supprimé avec succès',
         ], 200);
     }
 
     /**
- * Télécharger l'image de l'EC sous format PDF.
- */
-public function downloadImagePdf($id)
-{
-    $ec = Ec::find($id);
+     * Télécharger l'image de l'EC sous format PDF.
+     */
+    public function downloadImagePdf($id)
+    {
+        $ec = Ec::find($id);
 
-    if (!$ec || !$ec->image_ec) {
-        Log::channel('audit')->warning("Tentative de téléchargement PDF échouée : Image ou EC ID $id introuvable.");
-        return response()->json(['message' => 'Image introuvable pour cet EC'], 404);
+        if (! $ec || ! $ec->image_ec) {
+            Log::channel('audit')->warning("Tentative de téléchargement PDF échouée : Image ou EC ID $id introuvable.");
+
+            return response()->json(['message' => 'Image introuvable pour cet EC'], 404);
+        }
+
+        Log::channel('audit')->info("Génération du PDF pour l'image de l'EC : {$ec->code_ec}");
+
+        // Préparation des données pour la vue
+        $data = [
+            'ec' => $ec,
+            'imagePath' => $ec->image_ec,
+        ];
+
+        // Génération du PDF
+        $pdf = Pdf::loadView('pdfs.ec_image', $data);
+
+        // Retourne le fichier en téléchargement
+        return $pdf->download('image_ec_'.$ec->code_ec.'.pdf');
     }
-
-    Log::channel('audit')->info("Génération du PDF pour l'image de l'EC : {$ec->code_ec}");
-
-    // Préparation des données pour la vue
-    $data = [
-        'ec' => $ec,
-        'imagePath' => $ec->image_ec
-    ];
-
-    // Génération du PDF
-    $pdf = Pdf::loadView('pdfs.ec_image', $data);
-
-    // Retourne le fichier en téléchargement
-    return $pdf->download('image_ec_' . $ec->code_ec . '.pdf');
-}
 }

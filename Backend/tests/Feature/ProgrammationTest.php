@@ -3,25 +3,27 @@
 namespace Tests\Feature;
 
 use App\Models\Ec;
-use App\Models\Salle;
 use App\Models\Personnel;
 use App\Models\Programmation;
+use App\Models\Salle;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Tests\Traits\ApiTokenTrait;
 
 class ProgrammationTest extends TestCase
 {
-    use RefreshDatabase, ApiTokenTrait;
+    use ApiTokenTrait, RefreshDatabase;
 
     protected $ec;
+
     protected $salle;
+
     protected $personnel;
 
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Authentification (via ton trait)
         $this->authenticatePersonnel();
 

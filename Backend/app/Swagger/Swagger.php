@@ -9,6 +9,7 @@ use OpenApi\Annotations as OA;
  *      version="1.0.0",
  *      title="API Suivie Academique",
  *      description="Documentation API de suivi académique",
+ *
  *      @OA\Contact(
  *          email="ton.email@example.com"
  *      )

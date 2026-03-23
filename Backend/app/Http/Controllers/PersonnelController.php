@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Personnel;
 use App\Mail\PersonnelCredentialsMail;
+use App\Models\Personnel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class PersonnelController extends Controller
 {
@@ -17,6 +17,7 @@ class PersonnelController extends Controller
     public function index()
     {
         $personnels = Personnel::all();
+
         return response()->json(['data' => $personnels], 200);
     }
 
@@ -26,13 +27,13 @@ class PersonnelController extends Controller
     public function store(Request $request)
     {
         $validateData = $request->validate([
-            'code_pers'  => 'required|unique:personnels,code_pers|string',
-            'nom_pers'   => 'required|string',
-            'sexe_pers'  => 'required|string|in:Masculin,Feminin',
+            'code_pers' => 'required|unique:personnels,code_pers|string',
+            'nom_pers' => 'required|string',
+            'sexe_pers' => 'required|string|in:Masculin,Feminin',
             'phone_pers' => 'required|string|unique:personnels,phone_pers',
             'login_pers' => 'required|string|unique:personnels,login_pers', // Doit être un email valide pour Gmail
-            'pwd_pers'   => 'required|string',
-            'type_pers'  => 'required|string', 
+            'pwd_pers' => 'required|string',
+            'type_pers' => 'required|string',
         ]);
 
         // 1. Sauvegarder le mot de passe en clair pour l'email
@@ -49,12 +50,12 @@ class PersonnelController extends Controller
             Mail::to($personnel->login_pers)->send(new PersonnelCredentialsMail($personnel, $plainPassword));
         } catch (\Exception $e) {
             // On enregistre l'erreur dans les logs mais on ne bloque pas la réponse
-            Log::error("Erreur d'envoi d'email au personnel : " . $e->getMessage());
+            Log::error("Erreur d'envoi d'email au personnel : ".$e->getMessage());
         }
 
         return response()->json([
             'message' => 'Personnel créé avec succès et email envoyé',
-            'data' => $personnel
+            'data' => $personnel,
         ], 201);
     }
 
@@ -65,7 +66,7 @@ class PersonnelController extends Controller
     {
         $personnel = Personnel::find($id);
 
-        if (!$personnel) {
+        if (! $personnel) {
             return response()->json(['message' => 'Personnel introuvable'], 404);
         }
 
@@ -79,18 +80,18 @@ class PersonnelController extends Controller
     {
         $personnel = Personnel::find($id);
 
-        if (!$personnel) {
+        if (! $personnel) {
             return response()->json(['message' => 'Personnel introuvable'], 404);
         }
 
         $validateData = $request->validate([
-            'code_pers'  => 'sometimes|string|unique:personnels,code_pers,' . $id . ',id',
-            'nom_pers'   => 'sometimes|string',
-            'sexe_pers'  => 'sometimes|string|in:Masculin,Feminin',
-            'phone_pers' => 'sometimes|string|unique:personnels,phone_pers,' . $id . ',id',
-            'login_pers' => 'sometimes|string|unique:personnels,login_pers,' . $id . ',id',
-            'pwd_pers'   => 'sometimes|string',
-            'type_pers'  => 'sometimes|string', 
+            'code_pers' => 'sometimes|string|unique:personnels,code_pers,'.$id.',id',
+            'nom_pers' => 'sometimes|string',
+            'sexe_pers' => 'sometimes|string|in:Masculin,Feminin',
+            'phone_pers' => 'sometimes|string|unique:personnels,phone_pers,'.$id.',id',
+            'login_pers' => 'sometimes|string|unique:personnels,login_pers,'.$id.',id',
+            'pwd_pers' => 'sometimes|string',
+            'type_pers' => 'sometimes|string',
         ]);
 
         if (isset($validateData['pwd_pers'])) {
@@ -101,7 +102,7 @@ class PersonnelController extends Controller
 
         return response()->json([
             'message' => 'Personnel mis à jour avec succès',
-            'data' => $personnel
+            'data' => $personnel,
         ], 200);
     }
 
@@ -112,7 +113,7 @@ class PersonnelController extends Controller
     {
         $personnel = Personnel::find($id);
 
-        if (!$personnel) {
+        if (! $personnel) {
             return response()->json(['message' => 'Personnel introuvable'], 404);
         }
 

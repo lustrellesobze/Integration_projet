@@ -13,9 +13,10 @@ class SalleController extends Controller
      */
     public function index()
     {
-        Log::channel('audit')->info("Consultation de la liste des salles.");
-        
+        Log::channel('audit')->info('Consultation de la liste des salles.');
+
         $salles = Salle::all();
+
         return response()->json(['data' => $salles], 200);
     }
 
@@ -34,14 +35,14 @@ class SalleController extends Controller
 
         $salle = Salle::create($validateData);
 
-        Log::channel('audit')->notice("Salle créée avec succès.", [
+        Log::channel('audit')->notice('Salle créée avec succès.', [
             'id' => $salle->id,
-            'num_salle' => $salle->num_salle
+            'num_salle' => $salle->num_salle,
         ]);
 
         return response()->json([
             'message' => 'Salle créée avec succès',
-            'data' => $salle
+            'data' => $salle,
         ], 201);
     }
 
@@ -52,8 +53,9 @@ class SalleController extends Controller
     {
         $salle = Salle::find($id);
 
-        if (!$salle) {
+        if (! $salle) {
             Log::channel('audit')->warning("Consultation salle : ID $id introuvable.");
+
             return response()->json(['message' => 'Salle introuvable'], 404);
         }
 
@@ -69,13 +71,14 @@ class SalleController extends Controller
 
         $salle = Salle::find($id);
 
-        if (!$salle) {
+        if (! $salle) {
             Log::channel('audit')->error("Mise à jour salle : ID $id introuvable.");
+
             return response()->json(['message' => 'Salle introuvable'], 404);
         }
 
         $validateData = $request->validate([
-            'num_salle' => 'sometimes|string|min:5|unique:salles,num_salle,' . $id . ',id',
+            'num_salle' => 'sometimes|string|min:5|unique:salles,num_salle,'.$id.',id',
             'contenance' => 'sometimes|integer|min:20',
             'status' => 'sometimes|string|in:Disponible,Indisponible',
         ]);
@@ -87,7 +90,7 @@ class SalleController extends Controller
         if (isset($validateData['status']) && $oldStatus !== $salle->status) {
             Log::channel('audit')->notice("Changement de statut pour la salle {$salle->num_salle}", [
                 'ancien' => $oldStatus,
-                'nouveau' => $salle->status
+                'nouveau' => $salle->status,
             ]);
         }
 
@@ -95,7 +98,7 @@ class SalleController extends Controller
 
         return response()->json([
             'message' => 'Salle mise à jour avec succès',
-            'data' => $salle
+            'data' => $salle,
         ], 200);
     }
 
@@ -112,7 +115,7 @@ class SalleController extends Controller
         Log::channel('audit')->notice("Salle supprimée définitivement : $numSalle");
 
         return response()->json([
-            'message' => 'Salle supprimée avec succès'
+            'message' => 'Salle supprimée avec succès',
         ], 200);
     }
 }

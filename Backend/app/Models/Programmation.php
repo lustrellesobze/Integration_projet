@@ -2,19 +2,21 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str; // 👈 Import obligatoire pour UUID
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model; // 👈 Import obligatoire pour UUID
+use Illuminate\Support\Str;
 
 class Programmation extends Model
 {
-        use HasFactory;
+    use HasFactory;
 
     protected $table = 'programmations';
 
     protected $primaryKey = 'id';
-    public $incrementing = false;  
-    protected $keyType = 'string'; 
+
+    public $incrementing = false;
+
+    protected $keyType = 'string';
 
     protected $fillable = [
         'code_ec',

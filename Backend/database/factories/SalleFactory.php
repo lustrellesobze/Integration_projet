@@ -17,9 +17,9 @@ class SalleFactory extends Factory
     public function definition(): array
     {
         return [
-            'num_salle'=>$this->faker->unique()->bothify('CF###'),
-            'contenance'=>$this->faker->randomDigit(),
-            'status'=>$this->faker->randomElement(['Disponible','Indisponible']),
+            'num_salle' => $this->faker->unique()->bothify('CF###'),
+            'contenance' => $this->faker->randomDigit(),
+            'status' => $this->faker->randomElement(['Disponible', 'Indisponible']),
         ];
     }
 }

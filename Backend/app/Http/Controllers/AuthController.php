@@ -1,13 +1,12 @@
 <?php
+
 // http/Controllers/AuthController.php
 
 namespace App\Http\Controllers;
 
+use App\Models\Personnel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use App\Models\Personnel;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log; // ✅ Ajout de l'import pour les logs
 
 class AuthController extends Controller
@@ -18,17 +17,17 @@ class AuthController extends Controller
             // Validation
             $credentials = $request->validate([
                 'login_pers' => 'required|string',
-                'pwd_pers'   => 'required|string',
+                'pwd_pers' => 'required|string',
             ]);
 
             // Vérification du login
             $personnel = Personnel::where('login_pers', $credentials['login_pers'])->first();
 
-            if (!$personnel || !Hash::check($credentials['pwd_pers'], $personnel->pwd_pers)) {
+            if (! $personnel || ! Hash::check($credentials['pwd_pers'], $personnel->pwd_pers)) {
                 // 📝 Log de l'échec de connexion
-                Log::channel('audit')->warning("Tentative de connexion échouée.", [
+                Log::channel('audit')->warning('Tentative de connexion échouée.', [
                     'login_tente' => $credentials['login_pers'],
-                    'ip' => $request->ip()
+                    'ip' => $request->ip(),
                 ]);
 
                 return response()->json(['message' => 'Identifiants invalides'], 401);
@@ -41,27 +40,27 @@ class AuthController extends Controller
             $token = $personnel->createToken('auth_token')->plainTextToken;
 
             // 📝 Log de succès de connexion
-            Log::channel('audit')->info("Utilisateur connecté avec succès.", [
+            Log::channel('audit')->info('Utilisateur connecté avec succès.', [
                 'personnel_id' => $personnel->id,
                 'nom' => $personnel->nom_pers,
-                'ip' => $request->ip()
+                'ip' => $request->ip(),
             ]);
 
             return response()->json([
-                "personnel"    => $personnel,
+                'personnel' => $personnel,
                 'access_token' => $token,
-                'token_type'   => 'Bearer',
+                'token_type' => 'Bearer',
             ], 200);
 
         } catch (\Throwable $th) {
             // 📝 Log de l'erreur technique
-            Log::channel('audit')->error("Erreur lors de la tentative de login.", [
-                'error' => $th->getMessage()
+            Log::channel('audit')->error('Erreur lors de la tentative de login.', [
+                'error' => $th->getMessage(),
             ]);
 
             return response()->json([
                 'message' => 'Erreur lors de la connexion',
-                'error'   => $th->getMessage()
+                'error' => $th->getMessage(),
             ], 500);
         }
     }
@@ -70,11 +69,11 @@ class AuthController extends Controller
     {
         try {
             $user = $request->user();
-            
+
             // 📝 Log avant la déconnexion
-            Log::channel('audit')->info("Utilisateur en cours de déconnexion.", [
+            Log::channel('audit')->info('Utilisateur en cours de déconnexion.', [
                 'personnel_id' => $user->id,
-                'nom' => $user->nom_pers
+                'nom' => $user->nom_pers,
             ]);
 
             $user->currentAccessToken()->delete();
@@ -83,13 +82,13 @@ class AuthController extends Controller
 
         } catch (\Throwable $th) {
             // 📝 Log de l'erreur technique
-            Log::channel('audit')->error("Erreur lors de la déconnexion.", [
-                'error' => $th->getMessage()
+            Log::channel('audit')->error('Erreur lors de la déconnexion.', [
+                'error' => $th->getMessage(),
             ]);
 
             return response()->json([
                 'message' => 'Erreur lors de la déconnexion',
-                'error'   => $th->getMessage()
+                'error' => $th->getMessage(),
             ], 500);
         }
     }

@@ -4,14 +4,14 @@ namespace App\Exports;
 
 use App\Models\Filiere;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings; // On ajoute cette interface
-use Maatwebsite\Excel\Concerns\ShouldAutoSize; // Pour que les colonnes s'ajustent automatiquement
+use Maatwebsite\Excel\Concerns\ShouldAutoSize; // On ajoute cette interface
+use Maatwebsite\Excel\Concerns\WithHeadings; // Pour que les colonnes s'ajustent automatiquement
 
-class FilieresExport implements FromCollection, WithHeadings, ShouldAutoSize
+class FilieresExport implements FromCollection, ShouldAutoSize, WithHeadings
 {
     /**
-    * @return \Illuminate\Support\Collection
-    */
+     * @return \Illuminate\Support\Collection
+     */
     public function collection()
     {
         // On sélectionne uniquement les colonnes importantes
@@ -26,7 +26,7 @@ class FilieresExport implements FromCollection, WithHeadings, ShouldAutoSize
         return [
             'Code Filière',
             'Libellé / Nom',
-            'Description'
+            'Description',
         ];
     }
 }

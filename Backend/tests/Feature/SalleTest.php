@@ -3,14 +3,14 @@
 namespace Tests\Feature;
 
 use App\Models\Salle;
-use Tests\TestCase;
-use Tests\Traits\ApiTokenTrait; // On importe le fichier du trait
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase; // On importe le fichier du trait
+use Tests\Traits\ApiTokenTrait;
 
 class SalleTest extends TestCase
 {
     // On utilise le nom exact du trait défini dans ApiTokenTrait.php
-    use RefreshDatabase, ApiTokenTrait; 
+    use ApiTokenTrait, RefreshDatabase;
 
     protected function setUp(): void
     {
@@ -25,13 +25,13 @@ class SalleTest extends TestCase
         $payload = [
             'num_salle' => 'SALLE-101',
             'contenance' => 50,
-            'status' => 'Disponible'
+            'status' => 'Disponible',
         ];
 
         $response = $this->postJson('/api/salles', $payload);
 
         $response->assertStatus(201)
-                 ->assertJsonFragment(['message' => 'Salle créée avec succès']);
+            ->assertJsonFragment(['message' => 'Salle créée avec succès']);
 
         $this->assertDatabaseHas('salles', ['num_salle' => 'SALLE-101']);
     }
@@ -42,13 +42,13 @@ class SalleTest extends TestCase
         $payload = [
             'num_salle' => 'SALLE-ERR',
             'contenance' => 10, // Le minimum est 20 dans ton contrôleur
-            'status' => 'Disponible'
+            'status' => 'Disponible',
         ];
 
         $response = $this->postJson('/api/salles', $payload);
 
         $response->assertStatus(422)
-                 ->assertJsonValidationErrors(['contenance']);
+            ->assertJsonValidationErrors(['contenance']);
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
@@ -57,13 +57,13 @@ class SalleTest extends TestCase
         $salle = Salle::create([
             'num_salle' => 'SALLE-202',
             'contenance' => 100,
-            'status' => 'Disponible'
+            'status' => 'Disponible',
         ]);
 
         $response = $this->getJson("/api/salles/{$salle->num_salle}");
 
         $response->assertStatus(200)
-                 ->assertJsonPath('data.num_salle', 'SALLE-202');
+            ->assertJsonPath('data.num_salle', 'SALLE-202');
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
@@ -72,17 +72,17 @@ class SalleTest extends TestCase
         $salle = Salle::create([
             'num_salle' => 'SALLE-303',
             'contenance' => 25,
-            'status' => 'Disponible'
+            'status' => 'Disponible',
         ]);
 
         $response = $this->putJson("/api/salles/{$salle->num_salle}", [
-            'status' => 'Indisponible'
+            'status' => 'Indisponible',
         ]);
 
         $response->assertStatus(200);
         $this->assertDatabaseHas('salles', [
             'num_salle' => 'SALLE-303',
-            'status' => 'Indisponible'
+            'status' => 'Indisponible',
         ]);
     }
 
@@ -92,7 +92,7 @@ class SalleTest extends TestCase
         $salle = Salle::create([
             'num_salle' => 'SALLE-OLD',
             'contenance' => 30,
-            'status' => 'Disponible'
+            'status' => 'Disponible',
         ]);
 
         $response = $this->deleteJson("/api/salles/{$salle->num_salle}");
