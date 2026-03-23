@@ -1,4 +1,4 @@
-name: Laravel CI
+name: Laravel CI & Docker
 
 on:
   push:
@@ -8,9 +8,11 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  PHP_VERSION: 8.2
 
 jobs:
-  laravel-tests:
+  laravel-ci:
+    name: 🧪 CI Laravel & Tests
     runs-on: ubuntu-latest
 
     services:
@@ -24,53 +26,149 @@ jobs:
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0 # Nécessaire pour un scan complet des secrets
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.2'
-        extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql
-        coverage: none
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql
+          coverage: none
 
-    # --- ÉTAPE DE SÉCURITÉ 1 : SCAN DES SECRETS ---
-    - name: Secret Scanning (Gitleaks)
-      uses: gitleaks/gitleaks-action@v2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      continue-on-error: true # Permet de ne pas bloquer si tu as des faux positifs au début
+      - name: Copy .env
+        working-directory: ./Backend
+        run: php -r "file_exists('.env') || copy('.env.example', '.env');"
 
-    - name: Copy .env
-      working-directory: ./Backend
-      run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+      - name: Install Dependencies
+        working-directory: ./Backend
+        run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
 
-    - name: Install Dependencies
-      working-directory: ./Backend
-      run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+      - name: PHP Pint - Clean Code
+        working-directory: ./Backend
+        run: vendor/bin/pint
 
-    # --- ÉTAPE DE SÉCURITÉ 2 : SCAN DES DÉPENDANCES (SCA) ---
-    - name: Security Check Dependencies (Composer Audit)
-      working-directory: ./Backend
-      run: composer audit || true # Vérifie si tes packages ont des failles connues
+      - name: Secret Scanning (Gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
 
-    - name: Generate key
-      working-directory: ./Backend
-      run: php artisan key:generate
+      - name: Security Check Dependencies (Composer Audit)
+        working-directory: ./Backend
+        run: composer audit || true
 
-    - name: Directory Permissions
-      working-directory: ./Backend
-      run: chmod -R 777 storage bootstrap/cache
+      - name: Generate key
+        working-directory: ./Backend
+        run: php artisan key:generate
 
-    - name: Execute tests
-      working-directory: ./Backend
-      env:
-        DB_CONNECTION: mysql
-        DB_HOST: 127.0.0.1
-        DB_PORT: 3306
-        DB_DATABASE: testing
-        DB_USERNAME: root
-        DB_PASSWORD: root
-      run: php artisan test
+      - name: Directory Permissions
+        working-directory: ./Backend
+        run: chmod -R 777 storage bootstrap/cache
+
+      - name: Execute tests
+        working-directory: ./Backend
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: testing
+          DB_USERNAME: root
+          DB_PASSWORD: root
+        run: php artisan test
+
+  build-docker:
+    name: 🐳 Build Docker Image
+    runs-on: ubuntu-latest
+    needs: laravel-ci
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./Backend
+          dockerfile: ./Backend/Dockerfile
+          push: false
+          tags: project-api:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify container runs
+        run: |
+          docker run -d \
+            --name test-container \
+            -e DB_HOST=localhost \
+            -e DB_DATABASE=project_db \
+            -e DB_USERNAME=root \
+            -e DB_PASSWORD=root \
+            project-api:${{ github.sha }} || true
+          sleep 5
+          docker ps -a
+          docker stop test-container || true
+          docker rm test-container || true
+
+      - name: Save Docker image as artifact
+        run: docker save project-api:${{ github.sha }} | gzip > image.tar.gz
+
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image-${{ github.sha }}
+          path: image.tar.gz
+          retention-days: 1
+
+  security:
+    name: 🔒 Security Scan Docker & Code
+    runs-on: ubuntu-latest
+    needs: build-docker
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP ${{ env.PHP_VERSION }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, zip, pdo_mysql
+          coverage: none
+
+      - name: Composer Audit
+        working-directory: ./Backend
+        run: |
+          composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+          composer audit --no-dev || true
+
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-image-${{ github.sha }}
+
+      - name: Load Docker image
+        run: docker load < image.tar.gz
+
+      - name: Trivy Scan Docker Image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: project-api:${{ github.sha }}
+          format: table
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+
+      - name: TruffleHog Secret Detection
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified
+        continue-on-error: true
