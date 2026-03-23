@@ -6,6 +6,7 @@ use App\Models\Ec;
 use App\Models\Salle;
 use App\Models\Personnel;
 use App\Models\Programmation;
+use App\Models\Ue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Tests\Traits\ApiTokenTrait;
@@ -14,6 +15,7 @@ class ProgrammationTest extends TestCase
 {
     use RefreshDatabase, ApiTokenTrait;
 
+    protected $ue;
     protected $ec;
     protected $salle;
     protected $personnel;
@@ -25,8 +27,9 @@ class ProgrammationTest extends TestCase
         // Authentification (via ton trait)
         $this->authenticatePersonnel();
 
-        // Préparation des données parentes nécessaires (clés étrangères)
-        $this->ec = Ec::factory()->create();
+        // Création des données parentes nécessaires
+        $this->ue = Ue::factory()->create();
+        $this->ec = Ec::factory()->create(['code_ue' => $this->ue->code_ue]);
         $this->salle = Salle::factory()->create();
         $this->personnel = Personnel::factory()->create();
     }
@@ -34,7 +37,11 @@ class ProgrammationTest extends TestCase
     #[\PHPUnit\Framework\Attributes\Test]
     public function can_list_programmations()
     {
-        Programmation::factory()->count(3)->create();
+        Programmation::factory()->count(3)->create([
+            'code_ec'   => $this->ec->code_ec,
+            'num_salle' => $this->salle->num_salle,
+            'code_pers' => $this->personnel->code_pers,
+        ]);
 
         $response = $this->getJson('/api/programmations');
 
@@ -61,7 +68,6 @@ class ProgrammationTest extends TestCase
         $response->assertStatus(201)
                  ->assertJsonPath('data.status', 'Programmé');
 
-        // Vérification de l'existence en base (et du fonctionnement de l'UUID)
         $this->assertDatabaseHas('programmations', [
             'code_ec'   => $this->ec->code_ec,
             'num_salle' => $this->salle->num_salle,
@@ -71,7 +77,11 @@ class ProgrammationTest extends TestCase
     #[\PHPUnit\Framework\Attributes\Test]
     public function can_show_specific_programmation()
     {
-        $programmation = Programmation::factory()->create();
+        $programmation = Programmation::factory()->create([
+            'code_ec'   => $this->ec->code_ec,
+            'num_salle' => $this->salle->num_salle,
+            'code_pers' => $this->personnel->code_pers,
+        ]);
 
         $response = $this->getJson("/api/programmations/{$programmation->id}");
 
@@ -82,7 +92,12 @@ class ProgrammationTest extends TestCase
     #[\PHPUnit\Framework\Attributes\Test]
     public function can_update_programmation()
     {
-        $programmation = Programmation::factory()->create(['status' => 'Programmé']);
+        $programmation = Programmation::factory()->create([
+            'code_ec'   => $this->ec->code_ec,
+            'num_salle' => $this->salle->num_salle,
+            'code_pers' => $this->personnel->code_pers,
+            'status'    => 'Programmé'
+        ]);
 
         $response = $this->putJson("/api/programmations/{$programmation->id}", [
             'status' => 'Terminé'
@@ -94,6 +109,4 @@ class ProgrammationTest extends TestCase
             'status' => 'Terminé'
         ]);
     }
-
-  
 }
