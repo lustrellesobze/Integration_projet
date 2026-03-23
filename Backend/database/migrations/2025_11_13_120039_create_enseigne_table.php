@@ -22,7 +22,7 @@ return new class extends Migration
 
             // 🔹 Clés étrangères
             $table->foreign('code_pers')->references('code_pers')->on('personnels')->onDelete('cascade');
-            $table->foreign('code_ec')->references('code_ec')->on('ec')->onDelete('cascade');
+            $table->foreign('code_ec')->references('code_ec')->on('ecs')->onDelete('cascade');
         });
     }
 
