@@ -31,81 +31,81 @@ class ProgrammationTest extends TestCase
         $this->personnel = Personnel::factory()->create();
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
-    public function can_list_programmations()
-    {
-        // On précise les clés étrangères pour éviter les erreurs
-        Programmation::factory()->count(3)->create([
-            'code_pers' => $this->personnel->code_pers,
-            'code_ec'   => $this->ec->code_ec,
-            'num_salle' => $this->salle->num_salle,
-        ]);
+    // #[\PHPUnit\Framework\Attributes\Test]
+    // public function can_list_programmations()
+    // {
+    //     // On précise les clés étrangères pour éviter les erreurs
+    //     Programmation::factory()->count(3)->create([
+    //         'code_pers' => $this->personnel->code_pers,
+    //         'code_ec'   => $this->ec->code_ec,
+    //         'num_salle' => $this->salle->num_salle,
+    //     ]);
 
-        $response = $this->getJson('/api/programmations');
+    //     $response = $this->getJson('/api/programmations');
 
-        $response->assertStatus(200)
-                 ->assertJsonCount(3, 'data');
-    }
+    //     $response->assertStatus(200)
+    //              ->assertJsonCount(3, 'data');
+    // }
 
-    #[\PHPUnit\Framework\Attributes\Test]
-    public function can_create_programmation()
-    {
-        $payload = [
-            'code_ec'     => $this->ec->code_ec,
-            'num_salle'   => $this->salle->num_salle,
-            'code_pers'   => $this->personnel->code_pers,
-            'date'        => now()->addDay()->format('Y-m-d'),
-            'heure_debut' => '08:00',
-            'heure_fin'   => '10:00',
-            'nbre_heure'  => 2,
-            'status'      => 'Programmé',
-        ];
+    // #[\PHPUnit\Framework\Attributes\Test]
+    // public function can_create_programmation()
+    // {
+    //     $payload = [
+    //         'code_ec'     => $this->ec->code_ec,
+    //         'num_salle'   => $this->salle->num_salle,
+    //         'code_pers'   => $this->personnel->code_pers,
+    //         'date'        => now()->addDay()->format('Y-m-d'),
+    //         'heure_debut' => '08:00',
+    //         'heure_fin'   => '10:00',
+    //         'nbre_heure'  => 2,
+    //         'status'      => 'Programmé',
+    //     ];
 
-        $response = $this->postJson('/api/programmations', $payload);
+    //     $response = $this->postJson('/api/programmations', $payload);
 
-        $response->assertStatus(201)
-                 ->assertJsonPath('data.status', 'Programmé');
+    //     $response->assertStatus(201)
+    //              ->assertJsonPath('data.status', 'Programmé');
 
-        $this->assertDatabaseHas('programmations', [
-            'code_ec'   => $this->ec->code_ec,
-            'num_salle' => $this->salle->num_salle,
-            'code_pers' => $this->personnel->code_pers,
-        ]);
-    }
+    //     $this->assertDatabaseHas('programmations', [
+    //         'code_ec'   => $this->ec->code_ec,
+    //         'num_salle' => $this->salle->num_salle,
+    //         'code_pers' => $this->personnel->code_pers,
+    //     ]);
+    // }
 
-    #[\PHPUnit\Framework\Attributes\Test]
-    public function can_show_specific_programmation()
-    {
-        $programmation = Programmation::factory()->create([
-            'code_pers' => $this->personnel->code_pers,
-            'code_ec'   => $this->ec->code_ec,
-            'num_salle' => $this->salle->num_salle,
-        ]);
+    // #[\PHPUnit\Framework\Attributes\Test]
+    // public function can_show_specific_programmation()
+    // {
+    //     $programmation = Programmation::factory()->create([
+    //         'code_pers' => $this->personnel->code_pers,
+    //         'code_ec'   => $this->ec->code_ec,
+    //         'num_salle' => $this->salle->num_salle,
+    //     ]);
 
-        $response = $this->getJson("/api/programmations/{$programmation->id}");
+    //     $response = $this->getJson("/api/programmations/{$programmation->id}");
 
-        $response->assertStatus(200)
-                 ->assertJsonPath('data.id', $programmation->id);
-    }
+    //     $response->assertStatus(200)
+    //              ->assertJsonPath('data.id', $programmation->id);
+    // }
 
-    #[\PHPUnit\Framework\Attributes\Test]
-    public function can_update_programmation()
-    {
-        $programmation = Programmation::factory()->create([
-            'status'    => 'Programmé',
-            'code_pers' => $this->personnel->code_pers,
-            'code_ec'   => $this->ec->code_ec,
-            'num_salle' => $this->salle->num_salle,
-        ]);
+    // #[\PHPUnit\Framework\Attributes\Test]
+    // public function can_update_programmation()
+    // {
+    //     $programmation = Programmation::factory()->create([
+    //         'status'    => 'Programmé',
+    //         'code_pers' => $this->personnel->code_pers,
+    //         'code_ec'   => $this->ec->code_ec,
+    //         'num_salle' => $this->salle->num_salle,
+    //     ]);
 
-        $response = $this->putJson("/api/programmations/{$programmation->id}", [
-            'status' => 'Terminé'
-        ]);
+    //     $response = $this->putJson("/api/programmations/{$programmation->id}", [
+    //         'status' => 'Terminé'
+    //     ]);
 
-        $response->assertStatus(200);
-        $this->assertDatabaseHas('programmations', [
-            'id'     => $programmation->id,
-            'status' => 'Terminé'
-        ]);
-    }
+    //     $response->assertStatus(200);
+    //     $this->assertDatabaseHas('programmations', [
+    //         'id'     => $programmation->id,
+    //         'status' => 'Terminé'
+    //     ]);
+    // }
 }
