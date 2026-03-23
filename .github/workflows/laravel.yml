@@ -10,7 +10,7 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   PHP_VERSION: '8.2'
   # J'ai renommé l'image ici pour éviter tout conflit
-  IMAGE_NAME: Suivie-academique
+  IMAGE_NAME: suivie-academique
 
 jobs:
   # ─────────────────────────────────────────────
