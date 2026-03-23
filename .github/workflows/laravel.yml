@@ -141,8 +141,15 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
 
+      # ✅ Push sur toutes les branches du workflow (plus seulement master)
       - name: Push to DockerHub
-        if: github.ref == 'refs/heads/master'
+        if: |
+          github.event_name == 'push' &&
+          (
+            github.ref == 'refs/heads/master' ||
+            github.ref == 'refs/heads/initialize' ||
+            github.ref == 'refs/heads/develop'
+          )
         run: |
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
@@ -174,14 +181,13 @@ jobs:
           composer install --no-interaction --prefer-dist --no-dev
           composer audit || true
 
-      # ✅ Fix TruffleHog : s'exécute uniquement sur pull_request
-      # Sur un push direct BASE et HEAD peuvent être identiques → erreur garantie
+      # ✅ TruffleHog : push ET pull_request, avec base adaptée selon l'événement
       - name: TruffleHog Secret Detection
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          base: ${{ github.event.pull_request.base.sha }}
-          head: ${{ github.event.pull_request.head.sha }}
+          base: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          head: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           extra_args: --only-verified
         continue-on-error: true
