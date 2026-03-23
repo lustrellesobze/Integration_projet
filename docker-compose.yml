@@ -1,0 +1,33 @@
+services:
+  # 1. Base de données MySQL
+  db:
+    image: mysql:8.2
+    container_name: suivie-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: suivie_db
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3308:3306"
+    volumes:
+      - suivie_db_data:/var/lib/mysql
+
+  # 2. Backend Laravel
+  backend:
+    build: 
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: suivie-api
+    ports:
+      - "8001:8000"
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=suivie_db
+      - DB_USERNAME=root
+      - DB_PASSWORD=root
+
+volumes:
+  suivie_db_data:

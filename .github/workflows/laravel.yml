@@ -1,0 +1,76 @@
+name: Laravel CI
+
+on:
+  push:
+    branches: [ "feature/initialize", "master", "develop" ]
+  pull_request:
+    branches: [ "feature/initialize", "master", "develop" ]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  laravel-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.2
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: testing
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Nécessaire pour un scan complet des secrets
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql
+        coverage: none
+
+    # --- ÉTAPE DE SÉCURITÉ 1 : SCAN DES SECRETS ---
+    - name: Secret Scanning (Gitleaks)
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      continue-on-error: true # Permet de ne pas bloquer si tu as des faux positifs au début
+
+    - name: Copy .env
+      working-directory: ./Backend
+      run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+
+    - name: Install Dependencies
+      working-directory: ./Backend
+      run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+
+    # --- ÉTAPE DE SÉCURITÉ 2 : SCAN DES DÉPENDANCES (SCA) ---
+    - name: Security Check Dependencies (Composer Audit)
+      working-directory: ./Backend
+      run: composer audit || true # Vérifie si tes packages ont des failles connues
+
+    - name: Generate key
+      working-directory: ./Backend
+      run: php artisan key:generate
+
+    - name: Directory Permissions
+      working-directory: ./Backend
+      run: chmod -R 777 storage bootstrap/cache
+
+    - name: Execute tests
+      working-directory: ./Backend
+      env:
+        DB_CONNECTION: mysql
+        DB_HOST: 127.0.0.1
+        DB_PORT: 3306
+        DB_DATABASE: testing
+        DB_USERNAME: root
+        DB_PASSWORD: root
+      run: php artisan test
