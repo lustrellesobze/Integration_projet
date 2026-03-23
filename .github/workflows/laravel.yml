@@ -9,7 +9,8 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   PHP_VERSION: '8.2'
-  IMAGE_NAME: project-api
+  # J'ai renommé l'image ici pour éviter tout conflit
+  IMAGE_NAME: Suivie-academique
 
 jobs:
   # ─────────────────────────────────────────────
@@ -108,6 +109,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # On définit les tags une seule fois pour éviter les erreurs de frappe
       - name: Build Docker Image
         run: |
           docker build \
@@ -141,15 +143,8 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
 
-      # ✅ Push sur toutes les branches du workflow (plus seulement master)
       - name: Push to DockerHub
-        if: |
-          github.event_name == 'push' &&
-          (
-            github.ref == 'refs/heads/master' ||
-            github.ref == 'refs/heads/initialize' ||
-            github.ref == 'refs/heads/develop'
-          )
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/initialize' || github.ref == 'refs/heads/develop')
         run: |
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
@@ -181,7 +176,6 @@ jobs:
           composer install --no-interaction --prefer-dist --no-dev
           composer audit || true
 
-      # ✅ TruffleHog : push ET pull_request, avec base adaptée selon l'événement
       - name: TruffleHog Secret Detection
         if: github.event_name == 'push' || github.event_name == 'pull_request'
         uses: trufflesecurity/trufflehog@main
