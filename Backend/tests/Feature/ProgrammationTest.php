@@ -3,11 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\Ec;
+use App\Models\Ue;
 use App\Models\Salle;
 use App\Models\Personnel;
 use App\Models\Programmation;
 use App\Models\Niveau;
-use App\Models\Ue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Tests\Traits\ApiTokenTrait;
@@ -25,17 +25,23 @@ class ProgrammationTest extends TestCase
     {
         parent::setUp();
 
-        // Authentification via le trait
+        // Authentification
         $this->authenticatePersonnel();
 
-        // Création des données parentes nécessaires pour les clés étrangères
+        // Créer un Niveau
         $niveau = Niveau::factory()->create();
+
+        // Créer une UE associée au Niveau
         $this->ue = Ue::factory()->create([
-            'code_niveau' => $niveau->code_niveau
+            'code_niveau' => $niveau->code_niveau,
         ]);
+
+        // Créer un EC associé à l’UE
         $this->ec = Ec::factory()->create([
-            'code_ue' => $this->ue->code_ue
+            'code_ue' => $this->ue->code_ue,
         ]);
+
+        // Créer Salle et Personnel
         $this->salle = Salle::factory()->create();
         $this->personnel = Personnel::factory()->create();
     }
@@ -46,7 +52,7 @@ class ProgrammationTest extends TestCase
         Programmation::factory()->count(3)->create([
             'code_ec'   => $this->ec->code_ec,
             'num_salle' => $this->salle->num_salle,
-            'code_pers' => $this->personnel->code_pers
+            'code_pers' => $this->personnel->code_pers,
         ]);
 
         $response = $this->getJson('/api/programmations');
@@ -86,7 +92,7 @@ class ProgrammationTest extends TestCase
         $programmation = Programmation::factory()->create([
             'code_ec'   => $this->ec->code_ec,
             'num_salle' => $this->salle->num_salle,
-            'code_pers' => $this->personnel->code_pers
+            'code_pers' => $this->personnel->code_pers,
         ]);
 
         $response = $this->getJson("/api/programmations/{$programmation->id}");
@@ -102,18 +108,17 @@ class ProgrammationTest extends TestCase
             'code_ec'   => $this->ec->code_ec,
             'num_salle' => $this->salle->num_salle,
             'code_pers' => $this->personnel->code_pers,
-            'status'    => 'Programmé'
+            'status'    => 'Programmé',
         ]);
 
         $response = $this->putJson("/api/programmations/{$programmation->id}", [
-            'status' => 'Terminé'
+            'status' => 'Terminé',
         ]);
 
         $response->assertStatus(200);
-
         $this->assertDatabaseHas('programmations', [
             'id'     => $programmation->id,
-            'status' => 'Terminé'
+            'status' => 'Terminé',
         ]);
     }
 }
