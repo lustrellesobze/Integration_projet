@@ -17,34 +17,16 @@ class ProgrammationTest extends TestCase
     protected $ec;
     protected $salle;
     protected $personnel;
-    protected $ue;
 
     protected function setUp(): void
     {
         parent::setUp();
-
+        
         // Authentification (via ton trait)
         $this->authenticatePersonnel();
 
-        // Créer une Filière
-        $filiere = \App\Models\Filiere::factory()->create();
-
-        // Créer un Niveau associé à la Filière
-        $niveau = \App\Models\Niveau::factory()->create([
-            'code_filiere' => $filiere->code_filiere,
-        ]);
-
-        // Créer une UE associée au Niveau
-        $this->ue = \App\Models\Ue::factory()->create([
-            'code_niveau' => $niveau->code_niveau,
-        ]);
-
-        // Créer un EC associé à l’UE
-        $this->ec = Ec::factory()->create([
-            'code_ue' => $this->ue->code_ue,
-        ]);
-
-        // Créer Salle et Personnel
+        // Préparation des données parentes nécessaires (clés étrangères)
+        $this->ec = Ec::factory()->create();
         $this->salle = Salle::factory()->create();
         $this->personnel = Personnel::factory()->create();
     }
@@ -52,7 +34,12 @@ class ProgrammationTest extends TestCase
     #[\PHPUnit\Framework\Attributes\Test]
     public function can_list_programmations()
     {
-        Programmation::factory()->count(3)->create();
+        // On précise les clés étrangères pour éviter les erreurs
+        Programmation::factory()->count(3)->create([
+            'code_pers' => $this->personnel->code_pers,
+            'code_ec'   => $this->ec->code_ec,
+            'num_salle' => $this->salle->num_salle,
+        ]);
 
         $response = $this->getJson('/api/programmations');
 
@@ -79,17 +66,21 @@ class ProgrammationTest extends TestCase
         $response->assertStatus(201)
                  ->assertJsonPath('data.status', 'Programmé');
 
-        // Vérification de l'existence en base
         $this->assertDatabaseHas('programmations', [
             'code_ec'   => $this->ec->code_ec,
             'num_salle' => $this->salle->num_salle,
+            'code_pers' => $this->personnel->code_pers,
         ]);
     }
 
     #[\PHPUnit\Framework\Attributes\Test]
     public function can_show_specific_programmation()
     {
-        $programmation = Programmation::factory()->create();
+        $programmation = Programmation::factory()->create([
+            'code_pers' => $this->personnel->code_pers,
+            'code_ec'   => $this->ec->code_ec,
+            'num_salle' => $this->salle->num_salle,
+        ]);
 
         $response = $this->getJson("/api/programmations/{$programmation->id}");
 
@@ -100,7 +91,12 @@ class ProgrammationTest extends TestCase
     #[\PHPUnit\Framework\Attributes\Test]
     public function can_update_programmation()
     {
-        $programmation = Programmation::factory()->create(['status' => 'Programmé']);
+        $programmation = Programmation::factory()->create([
+            'status'    => 'Programmé',
+            'code_pers' => $this->personnel->code_pers,
+            'code_ec'   => $this->ec->code_ec,
+            'num_salle' => $this->salle->num_salle,
+        ]);
 
         $response = $this->putJson("/api/programmations/{$programmation->id}", [
             'status' => 'Terminé'
