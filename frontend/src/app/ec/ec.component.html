@@ -1,0 +1,123 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Gestion des Éléments Constitutifs (EC)</h2>
+    <button (click)="exportAllPdf()" class="btn btn-danger shadow-sm">
+      <i class="bi bi-file-earmark-pdf-fill me-1"></i> Exporter la liste complète
+    </button>
+  </div>
+
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0">Ajouter un nouvel EC</h5>
+    </div>
+    <div class="card-body">
+      <form #ecForm="ngForm" (ngSubmit)="onSubmit(ecForm)">
+        <div class="row">
+          <div class="col-md-3 mb-3">
+            <label class="form-label">Code EC</label>
+            <input type="text" name="code_ec" ngModel class="form-control" required placeholder="ex: MATH101">
+          </div>
+          <div class="col-md-5 mb-3">
+            <label class="form-label">Libellé</label>
+            <input type="text" name="label_ec" ngModel class="form-control" required placeholder="Nom de l'EC">
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Unité d'Enseignement (UE)</label>
+            <select name="code_ue" ngModel class="form-select" required>
+              <option value="" disabled selected>Choisir une UE...</option>
+              <option *ngFor="let ue of ues" [value]="ue.code_ue">
+                {{ ue.code_ue }} - {{ ue.label_ue }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-2 mb-3">
+            <label class="form-label">Heures (NBH)</label>
+            <input type="number" name="nbh_ec" ngModel class="form-control" required min="1">
+          </div>
+          <div class="col-md-2 mb-3">
+            <label class="form-label">Crédits (NBC)</label>
+            <input type="number" name="nbc_ec" ngModel class="form-control" required min="1">
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Image</label>
+            <input type="file" (change)="onFileSelected($event)" class="form-control" accept="image/*">
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Description</label>
+            <textarea name="desc_ec" ngModel class="form-control" rows="1"></textarea>
+          </div>
+        </div>
+
+        <button type="submit" [disabled]="ecForm.invalid" class="btn btn-success w-100">
+          <i class="bi bi-plus-circle"></i> Enregistrer l'EC
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="table-responsive shadow-sm">
+    <table class="table table-hover table-bordered align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>Image</th>
+          <th>Code</th>
+          <th>Libellé</th>
+          <th>Heures</th>
+          <th>Crédits</th>
+          <th>UE</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let ec of ecs">
+          <td>
+            <img *ngIf="ec.image_ec" [src]="'http://localhost:8000/storage/' + ec.image_ec" 
+                 class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
+            <span *ngIf="!ec.image_ec" class="text-muted">N/A</span>
+          </td>
+          <td><strong>{{ ec.code_ec }}</strong></td>
+          <td>{{ ec.label_ec }}</td>
+          <td>{{ ec.nbh_ec }}h</td>
+          <td>{{ ec.nbc_ec }}</td>
+          <td><span class="badge bg-info text-dark">{{ ec.code_ue }}</span></td>
+          <td>
+            <div class="btn-group">
+              <button 
+                class="btn btn-sm btn-outline-danger me-1" 
+                (click)="downloadPdf(ec.code_ec)" 
+                [disabled]="!ec.image_ec"
+                title="Télécharger l'image en PDF">
+                <i class="bi bi-file-pdf"></i>
+              </button>
+
+              <button class="btn btn-sm btn-warning me-1" (click)="openEditModal(ec)">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-danger" (click)="openDeleteModal(ec)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <nav class="mt-4">
+    <ul class="pagination justify-content-center">
+      <li class="page-item" [class.disabled]="pagination.current_page === 1">
+        <button class="page-link" (click)="prevPage()">Précédent</button>
+      </li>
+      <li class="page-item active">
+        <span class="page-link">{{ pagination.current_page }} / {{ pagination.last_page }}</span>
+      </li>
+      <li class="page-item" [class.disabled]="pagination.current_page === pagination.last_page">
+        <button class="page-link" (click)="nextPage()">Suivant</button>
+      </li>
+    </ul>
+  </nav>
+
+  </div>

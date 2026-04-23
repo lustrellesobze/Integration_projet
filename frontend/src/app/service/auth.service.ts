@@ -1,0 +1,68 @@
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
+import { Personnel } from '../models/personnel';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthService {
+
+  private apiUrl = "http://localhost:8000/api"; // ton API Laravel
+
+  constructor(private http: HttpClient) {}
+
+  // ========================
+  // LOGIN
+  // ========================
+  login(login_pers: string, pwd_pers: string): Observable<any> {
+
+    const body = {
+      login_pers: login_pers,
+      pwd_pers: pwd_pers
+    };
+
+    return this.http.post(`${this.apiUrl}/login`, body).pipe(
+      tap((res: any) => {
+        // Stocker le token dans localStorage
+        localStorage.setItem("token", res.access_token);
+        localStorage.setItem("user", JSON.stringify(res.personnel));
+      })
+    );
+  }
+
+  // ========================
+  // LOGOUT
+  // ========================
+  logout(): Observable<any> {
+
+    const token = localStorage.getItem("token");
+
+    const headers = new HttpHeaders({
+      "Authorization": `Bearer ${token}`
+    });
+
+    return this.http.post(`${this.apiUrl}/logout`, {}, { headers }).pipe(
+      tap(() => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+      })
+    );
+  }
+
+  // ========================
+  // Vérifier si connecté
+  // ========================
+  isLogged(): boolean {
+    return !!localStorage.getItem("token");
+  }
+
+  // ========================
+  // Récupérer l'utilisateur connecté
+  // ========================
+  getUser(): Personnel | null {
+    const u = localStorage.getItem("user");
+    return u ? JSON.parse(u) : null;
+  }
+}

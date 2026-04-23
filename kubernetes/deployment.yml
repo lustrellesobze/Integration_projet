@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: laravel-app
+  namespace: default
+  labels:
+    app: laravel
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: laravel
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+
+  template:
+    metadata:
+      labels:
+        app: laravel
+    spec:
+      containers:
+        - name: laravel
+          image: lustrellemaffo/project-api:latest
+          ports:
+            - containerPort: 8001
+          envFrom:
+            - configMapRef:
+                name: laravel-config
+          env:
+            - name: DB_USERNAME
+              value: "root"
+            - name: DB_PASSWORD
+              value: "secret"
+            - name: APP_KEY
+              value: "base64:VT/tkrOddSdq7m1segfXRAr+LtJogTs+/KSS2McGJXk="  # ✅ vraie clé
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8001
+            initialDelaySeconds: 60      # ✅ augmenté
+            periodSeconds: 10
+            failureThreshold: 5          # ✅ ajouté
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8001
+            initialDelaySeconds: 120     # ✅ augmenté
+            periodSeconds: 20
+            failureThreshold: 5          # ✅ ajouté

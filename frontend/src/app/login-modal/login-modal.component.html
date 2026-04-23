@@ -1,0 +1,53 @@
+<!-- Modal -->
+<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      
+      <div class="modal-header">
+        <h5 class="modal-title" id="loginModalLabel">Connexion</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                aria-label="Close" (click)="fermer()"></button>
+      </div>
+      
+      <div class="modal-body">
+        <form>
+
+          <div class="mb-3">
+            <label for="emailInput" class="form-label">Login</label>
+            <input
+              type="text"
+              id="emailInput"
+              class="form-control"
+              [(ngModel)]="email"
+              name="login_pers"
+              placeholder="Entrer votre identifiant"
+              required
+            />
+          </div>
+
+          <div class="mb-3">
+            <label for="passwordInput" class="form-label">Mot de passe</label>
+            <input
+              type="password"
+              id="passwordInput"
+              class="form-control"
+              [(ngModel)]="password"
+              name="pwd_pers"
+              placeholder="Mot de passe"
+              required
+            />
+          </div>
+
+          <p *ngIf="erreur" class="text-danger">{{ erreur }}</p>
+
+        </form>
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" (click)="fermer()">Annuler</button>
+        <button type="button" class="btn btn-primary" (click)="loginUser()">Se connecter</button>
+      </div>
+
+    </div>
+  </div>
+</div>

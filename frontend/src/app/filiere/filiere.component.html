@@ -1,0 +1,134 @@
+<div class="container w-50 mx-auto mt-2">
+  <h1>Gestion de filière</h1>
+  <p class="text-center fw-bold fs-5"> Bienvenue sur la page de filière</p>
+
+  <form method="post" #form="ngForm" (ngSubmit)="onSubmit(form)">
+    <div class="mb-3">
+      <label for="code_filiere" class="form-label"> Code filière </label>
+      <input type="text" class="form-control" name="code_filiere" id="code_filiere" ngModel required>
+    </div>
+    <div class="mb-3">
+      <label for="label_filiere" class="form-label"> Label filière </label>
+      <input type="text" class="form-control" name="label_filiere" id="label_filiere" ngModel required>
+    </div>
+    <div class="mb-3">
+      <label for="desc_filiere" class="form-label"> Description filière </label>
+      <input type="text" class="form-control" name="desc_filiere" id="desc_filiere" ngModel>
+    </div>
+    <button type="submit" class="btn btn-primary mt-2 mb-3"> Ajouter</button>
+  </form>
+
+  <hr>
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Liste des filières</h3>
+    
+    <div class="btn-group" role="group" *ngIf="filieres.length > 0">
+      <button 
+        type="button" 
+        class="btn btn-outline-danger shadow-sm d-flex align-items-center gap-1" 
+        (click)="exportFullPDF()" 
+        [disabled]="isExporting">
+        <i class="bi bi-file-earmark-pdf"></i> 
+        {{ isExporting ? '...' : 'Export PDF' }}
+      </button>
+      
+      <button 
+        type="button" 
+        class="btn btn-outline-success shadow-sm d-flex align-items-center gap-1" 
+        (click)="exportFullExcel()" 
+        [disabled]="isExporting">
+        <i class="bi bi-file-earmark-excel"></i> 
+        {{ isExporting ? '...' : 'Export Excel' }}
+      </button>
+    </div>
+  </div>
+
+  <table class="table table-bordered mt-3" *ngIf="filieres.length > 0">
+    <thead>
+      <tr class="table-light">
+        <th>Code</th>
+        <th>Label</th>
+        <th>Description</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let f of filieres">
+        <td>{{ f.code_filiere }}</td>
+        <td>{{ f.label_filiere }}</td>
+        <td>{{ f.desc_filiere }}</td>
+        <td>
+          <div class="d-flex justify-content-start gap-2">
+            <button class="btn btn-sm btn-warning" (click)="openEditModal(f)">Modifier</button>
+            <button class="btn btn-sm btn-danger" (click)="openDeleteModal(f)">Supprimer</button>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  
+  <p *ngIf="filieres.length === 0" class="alert alert-info">Aucune filière disponible</p>
+
+  <nav *ngIf="pagination.last_page > 1" class="mt-3">
+    <ul class="pagination justify-content-center">
+      <li class="page-item" [class.disabled]="pagination.current_page === 1">
+        <button class="page-link" (click)="prevPage()">Précédent</button>
+      </li>
+      <li class="page-item disabled">
+        <span class="page-link">{{ pagination.current_page }} / {{ pagination.last_page }}</span>
+      </li>
+      <li class="page-item" [class.disabled]="pagination.current_page === pagination.last_page">
+        <button class="page-link" (click)="nextPage()">Suivant</button>
+      </li>
+    </ul>
+  </nav>
+</div>
+
+<div class="modal" tabindex="-1" [ngClass]="{'show d-block': showEditModal}" *ngIf="showEditModal && selectedFiliere">
+  <div class="modal-dialog">
+    <div class="modal-content shadow-lg">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title">Modifier la filière</h5>
+        <button type="button" class="btn-close" (click)="closeEditModal()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="fw-bold">Code filière</label>
+          <input type="text" class="form-control bg-light" [(ngModel)]="selectedFiliere.code_filiere" disabled>
+        </div>
+        <div class="mb-3">
+          <label class="fw-bold">Label filière</label>
+          <input type="text" class="form-control" [(ngModel)]="selectedFiliere.label_filiere">
+        </div>
+        <div class="mb-3">
+          <label class="fw-bold">Description filière</label>
+          <textarea class="form-control" [(ngModel)]="selectedFiliere.desc_filiere" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeEditModal()">Annuler</button>
+        <button class="btn btn-primary" (click)="saveEdit()">Sauvegarder</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" tabindex="-1" [ngClass]="{'show d-block': showDeleteModal}" *ngIf="showDeleteModal && selectedFiliere">
+  <div class="modal-dialog">
+    <div class="modal-content shadow-lg">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Confirmer la suppression</h5>
+        <button type="button" class="btn-close" (click)="closeDeleteModal()"></button>
+      </div>
+      <div class="modal-body">
+        <p>Voulez-vous vraiment supprimer la filière <strong>{{ selectedFiliere.label_filiere }}</strong> ?</p>
+        <p class="text-muted small">Cette action est irréversible.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeDeleteModal()">Annuler</button>
+        <button class="btn btn-danger" (click)="confirmDelete()">Supprimer</button>
+      </div>
+    </div>
+  </div>
+</div>

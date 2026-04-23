@@ -19,7 +19,7 @@ jobs:
     name: 🧪 CI Laravel & Tests
     runs-on: ubuntu-latest
 
-    services:
+    services: 
       mysql:
         image: mysql:8.0
         env:
@@ -34,12 +34,12 @@ jobs:
           --health-retries=3
 
     steps:
-      - name: Checkout code
+      - name: Checkout code // 
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup PHP
+      - name: Setup PHP // 
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
@@ -50,15 +50,15 @@ jobs:
         working-directory: ./Backend
         run: php -r "file_exists('.env') || copy('.env.example', '.env');"
 
-      - name: Install Dependencies
+      - name: Install Dependencies //
         working-directory: ./Backend
         run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
 
-      - name: PHP Pint - Linting
+      - name: PHP Pint - Linting  // 
         working-directory: ./Backend
         run: vendor/bin/pint --test
 
-      - name: Secret Scanning (Gitleaks)
+      - name: Secret Scanning (Gitleaks) //
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -66,7 +66,7 @@ jobs:
 
       - name: Security Check Dependencies
         working-directory: ./Backend
-        run: composer audit || true
+        run: composer audit || true // Vérifie si les bibliothèques ont des failles de sécurité connues.
 
       - name: Generate key
         working-directory: ./Backend
@@ -76,7 +76,7 @@ jobs:
         working-directory: ./Backend
         run: chmod -R 777 storage bootstrap/cache
 
-      - name: Execute tests (PHPUnit)
+      - name: Execute tests (PHPUnit) //
         working-directory: ./Backend
         env:
           DB_CONNECTION: mysql
@@ -91,7 +91,7 @@ jobs:
   # JOB 2 : Build + Push DockerHub + Scan Trivy
   # ─────────────────────────────────────────────
   build-docker:
-    name: 🐳 Build, Scan & Push Docker Image
+    name: 🐳 Build, Scan & Push Docker Image // 
     runs-on: ubuntu-latest
     needs: laravel-ci
 
@@ -108,7 +108,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build Docker Image
+      - name: Build Docker Image // 
         run: |
           docker build \
             --target production \
@@ -116,7 +116,7 @@ jobs:
             --tag ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest \
             ./Backend
 
-      - name: Verify container starts
+      - name: Verify container starts // Le pipeline lance mon conteneur et vérfie si docker a un probleme de configuration interne
         run: |
           docker run -d --name test-container \
             -e APP_KEY=base64:dGVzdGtleWZvcmNpY2Rwd== \
@@ -131,7 +131,7 @@ jobs:
           docker stop test-container
           docker rm test-container
 
-      - name: Trivy Scan Docker Image
+      - name: Trivy Scan Docker Image // l'analyse des vulnerabilité critique
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
@@ -142,7 +142,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       # ✅ Push sur toutes les branches du workflow (plus seulement master)
-      - name: Push to DockerHub
+      - name: Push to DockerHub // l'image est envoyée sur le cloud Docker Hub pour être prête au déploiement.
         if: |
           github.event_name == 'push' &&
           (
@@ -182,7 +182,7 @@ jobs:
           composer audit || true
 
       # ✅ TruffleHog : push ET pull_request, avec base adaptée selon l'événement
-      - name: TruffleHog Secret Detection
+      - name: TruffleHog Secret Detection // outil de Sécurité qui fouille l'historique complet de mon dépôt
         if: github.event_name == 'push' || github.event_name == 'pull_request'
         uses: trufflesecurity/trufflehog@main
         with:
@@ -191,3 +191,44 @@ jobs:
           head: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           extra_args: --only-verified
         continue-on-error: true
+        # ─────────────────────────────────────────────
+  # JOB 4 : SonarCloud Security Scan
+  # ─────────────────────────────────────────────
+  sonarcloud:
+    name: 🔍 SonarCloud Analysis
+    runs-on: ubuntu-latest
+    needs: laravel-ci
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # obligatoire pour SonarCloud
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, xml, pdo_mysql
+          coverage: xdebug        # pour générer le rapport de couverture
+
+      - name: Install Dependencies
+        working-directory: ./Backend
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Generate coverage report
+        working-directory: ./Backend
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ":memory:"
+        run: |
+          php artisan key:generate
+          vendor/bin/phpunit --coverage-clover=coverage.xml || true
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: ./Backend

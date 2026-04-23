@@ -1,0 +1,35 @@
+<main>
+    <h2 class="alert alert-info text-center">Fomulaire d'enrollement</h2>
+    <form action="traitement.php" method="post" class="w-50 m-auto mb-3">
+        <div class="form-floating mb-3">
+            <input type="text" class="form-control" id="floatingInput" placeholder="Atangana" name="nom" required>
+            <label for="floatingInput">Nom</label>
+        </div>
+        <div class="form-floating mb-3">
+            <input type="text" class="form-control" id="floatingInput" placeholder="Jules" name="prenom">
+            <label for="floatingInput">Prenom</label>
+        </div>
+        <div class="form-floating mb-4">
+            <select name="sexe" id="floatingSexe" required class="form-select" name="sexe">
+                <option value="Masculin">Masculin</option>
+                <option value="Feminin">Feminin</option>
+            </select>
+            <label for="floatingInput">Sexe</label>
+        </div>
+        <div class="form-floating mb-4">
+            <input type="email" class="form-control" id="floatingEmail" placeholder="jules@gmail.com" name="email"
+                required>
+            <label for="floatingEmail">Email</label>
+        </div>
+        <div class="form-floating mb-4">
+            <input type="password" class="form-control" id="floatingPwd" placeholder="12345@" name="password" required>
+            <label for="floatingPwd">Password</label>
+        </div>
+
+        <div class="row">
+            <div class="col-8"><input type="reset" value="Reinitialiser" class="btn btn-danger"></div>
+            <div class="col-2"></div>
+            <div class="col-2"><input type="submit" value="S'enroller" class="btn btn-success"></div>
+        </div>
+    </form>
+</main>

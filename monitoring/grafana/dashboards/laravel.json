@@ -1,0 +1,126 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "tooltip": { "mode": "single" } },
+      "targets": [
+        {
+          "expr": "100 - (avg by(instance)(rate(node_cpu_seconds_total{mode='idle'}[2m])) * 100)",
+          "legendFormat": "CPU Usage %",
+          "refId": "A"
+        }
+      ],
+      "title": "CPU Usage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "bytes"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "targets": [
+        {
+          "expr": "node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes",
+          "legendFormat": "RAM Used",
+          "refId": "A"
+        },
+        {
+          "expr": "node_memory_MemAvailable_bytes",
+          "legendFormat": "RAM Available",
+          "refId": "B"
+        }
+      ],
+      "title": "Memory Usage",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "Bps"
+        }
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "id": 3,
+      "targets": [
+        {
+          "expr": "rate(node_network_receive_bytes_total[2m])",
+          "legendFormat": "Réseau entrant {{device}}",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(node_network_transmit_bytes_total[2m])",
+          "legendFormat": "Réseau sortant {{device}}",
+          "refId": "B"
+        }
+      ],
+      "title": "Trafic Réseau",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 38,
+  "tags": ["laravel", "monitoring"],
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "Laravel App Monitoring",
+  "uid": "laravel-monitoring",
+  "version": 1
+}
+```
+
+---
+
+## Étape 3 — Alertes email
+
+### 3.1 — Configurer le contact email dans Grafana
+
+Va dans **Alerting → Contact points → Add contact point**
+
+- Name : `Email Alert`
+- Type : `Email`
+- Addresses : `ton-email@gmail.com`
+
+### 3.2 — Créer une alerte CPU
+
+Va dans **Alerting → Alert rules → New alert rule**
+
+Configure :
+```
+Nom          : CPU élevé
+Métrique     : 100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100)
+Condition    : IS ABOVE 80
+Pendant      : 2m
+Notification : Email Alert
+Message      : CPU dépasse 80% depuis 2 minutes
+```
+
+### 3.3 — Créer une alerte RAM
+```
+Nom          : RAM critique
+Métrique     : (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100
+Condition    : IS ABOVE 85
+Pendant      : 2m
+Notification : Email Alert
+Message      : RAM dépasse 85% depuis 2 minutes

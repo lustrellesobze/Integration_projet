@@ -1,0 +1,90 @@
+<!-- Login Modal -->
+<!-- On passe le username au composant enfant et on écoute l'événement sortie -->
+<app-login-modal [login]="username" (sortie)="recuperer($event)"></app-login-modal>
+
+<header class="mt-3">
+    <nav class="navbar navbar-expand-lg bg-success" data-bs-theme="dark">
+        <div class="container-fluid">
+            <!-- Logo / Nom de l'application -->
+            <a class="navbar-brand" href="/"><i class="fa-solid fa-house"></i> SA 1.0</a>
+
+            <!-- Bouton pour les écrans mobiles -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Liens de navigation -->
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <!-- Liens visibles uniquement si l'utilisateur est connecté -->
+                    <li class="nav-item" *ngIf="userLoggedIn">
+                        <a class="nav-link active" aria-current="page" routerLink="/filiere">
+                            <i class="fa-solid fa-book"></i> Filière
+                        </a>
+                    </li>
+                    <li class="nav-item" *ngIf="userLoggedIn">
+                        <a class="nav-link active" aria-current="page" routerLink="/niveau">Niveau</a>
+                    </li>
+                    <li class="nav-item" *ngIf="userLoggedIn">
+                        <a class="nav-link active" aria-current="page" routerLink="/ue">UE</a>
+                    </li>
+                    <li class="nav-item" *ngIf="userLoggedIn">
+                        <a class="nav-link active" aria-current="page" routerLink="/ec">EC</a>
+                    </li>
+
+                    <!-- Dropdown Personnel, visible si connecté -->
+                    <li class="nav-item dropdown" *ngIf="userLoggedIn">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <i class="fas fa-user"></i> Personnel
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#"><i class="fa-solid fa-floppy-disk"></i> Enregistrement</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fa-solid fa-list"></i> Listing Modification</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fa-solid fa-magnifying-glass"></i> Recherche</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Dropdown Programmation, visible si connecté -->
+                    <li class="nav-item dropdown" *ngIf="userLoggedIn">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <i class="fa-solid fa-calendar-days"></i> Programmation
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-clock"></i> Programmer</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fa-solid fa-file"></i> EDT</a></li>
+                            <li><a class="dropdown-item" href="#">Validation</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Liens supplémentaires protégés -->
+                    <li class="nav-item" *ngIf="userLoggedIn">
+                        <a class="nav-link active" aria-current="page" routerLink="/salle">Salle</a>
+                    </li>
+                    <li class="nav-item" *ngIf="userLoggedIn">
+                        <a class="nav-link active" aria-current="page" routerLink="/inscription">Stat</a>
+                    </li>
+                </ul>
+
+                <!-- Boutons de connexion / déconnexion -->
+                <div class="d-flex">
+                    <!-- Si pas connecté, afficher bouton Connexion -->
+                    <button *ngIf="!userLoggedIn" class="btn bg-primary" data-bs-target="#loginModal" data-bs-toggle="modal">
+                        <i class="fa fa-sign-in"></i> Connexion
+                    </button>
+
+                    <!-- Si connecté, afficher le nom de l'utilisateur et bouton Déconnexion -->
+                    <div *ngIf="userLoggedIn" class="d-flex align-items-center">
+                        <span class="text-white me-2"><i class="fa fa-user"></i> {{ username }}</span>
+                        <button class="btn btn-danger btn-sm" (click)="logout()">
+                        <i class="fa fa-sign-out"></i> Déconnexion
+                        </button>
+                    </div>
+                </div>
+
+                </div>
+            </div>
+    </nav>
+</header>
