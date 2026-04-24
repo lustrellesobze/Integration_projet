@@ -274,3 +274,96 @@ jobs:
           name: owasp-report
           path: reports/
           retention-days: 7
+          # ─────────────────────────────────────────────
+  # BONUS 2 : Multi-environnement dev/staging/prod
+  # ─────────────────────────────────────────────
+  deploy-staging:
+    name: 🚀 Deploy — Staging
+    runs-on: ubuntu-latest
+    needs: devsecops
+    if: github.ref == 'refs/heads/develop'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Tag image as staging
+        run: |
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker tag \
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:staging
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:staging
+
+      - name: Notify staging deployed
+        run: |
+          echo "✅ Image staging déployée"
+          echo "🔗 Commit : ${{ github.sha }}"
+          echo "🌿 Branche : develop"
+
+  deploy-production:
+    name: 🚀 Deploy — Production
+    runs-on: ubuntu-latest
+    needs: devsecops
+    if: github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Tag image as production
+        run: |
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker tag \
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:production
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:production
+
+      - name: Notify production deployed
+        run: |
+          echo "✅ Image production déployée"
+          echo "🔗 Commit : ${{ github.sha }}"
+          echo "🌿 Branche : master"
+
+  # ─────────────────────────────────────────────
+  # BONUS 3 : Dashboard KPI — Rapport pipeline
+  # ─────────────────────────────────────────────
+  kpi-report:
+    name: 📊 KPI — Pipeline Report
+    runs-on: ubuntu-latest
+    needs: [laravel-ci, build-docker, security, devsecops]
+    if: always()
+
+    steps:
+      - name: Generate KPI Report
+        run: |
+          echo "=================================================="
+          echo "       RAPPORT KPI — PIPELINE CI/CD"
+          echo "=================================================="
+          echo "📅 Date         : $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "🌿 Branche      : ${{ github.ref_name }}"
+          echo "🔗 Commit SHA   : ${{ github.sha }}"
+          echo "👤 Auteur       : ${{ github.actor }}"
+          echo "📦 Repository   : ${{ github.repository }}"
+          echo "--------------------------------------------------"
+          echo "📊 STATUTS DES JOBS"
+          echo "--------------------------------------------------"
+          echo "🧪 CI Laravel   : ${{ needs.laravel-ci.result }}"
+          echo "🐳 Docker Build : ${{ needs.build-docker.result }}"
+          echo "🔒 Security     : ${{ needs.security.result }}"
+          echo "🛡️  DevSecOps    : ${{ needs.devsecops.result }}"
+          echo "--------------------------------------------------"
+          echo "🖼️  Image Docker : ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          echo "=================================================="
