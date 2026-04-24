@@ -191,7 +191,7 @@ jobs:
           head: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           extra_args: --only-verified
         continue-on-error: true
-        # ─────────────────────────────────────────────
+   # ─────────────────────────────────────────────
   # JOB 4 : SonarCloud Security Scan
   # ─────────────────────────────────────────────
   sonarcloud:
@@ -203,18 +203,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0          # obligatoire pour SonarCloud
+          fetch-depth: 0
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
           extensions: mbstring, xml, pdo_mysql
-          coverage: xdebug        # pour générer le rapport de couverture
+          coverage: xdebug
 
       - name: Install Dependencies
         working-directory: ./Backend
         run: composer install --no-interaction --prefer-dist
+
+      # ✅ Copie du .env AVANT key:generate
+      - name: Copy .env
+        working-directory: ./Backend
+        run: php -r "file_exists('.env') || copy('.env.example', '.env');"
 
       - name: Generate coverage report
         working-directory: ./Backend
