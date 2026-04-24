@@ -280,7 +280,6 @@ jobs:
 
       - name: Build Angular (production)
         working-directory: ./frontend
-        # AJOUT UNIQUE : --base-href pour o2switch
         run: npx ng build --configuration production --base-href /suivi_academique/
 
       - name: Detect Angular dist folder name
@@ -368,7 +367,6 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./Backend/
-          # AJOUT UNIQUE : Chemin complet public_html
           server-dir: public_html/sobze/suivi_academique/Backend_Code/
           exclude: |
             **/vendor/**
@@ -383,7 +381,6 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist-frontend/
-          # AJOUT UNIQUE : Chemin complet public_html
           server-dir: public_html/sobze/suivi_academique/
 
   # ─────────────────────────────────────────────
@@ -427,6 +424,12 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist-frontend/
           server-dir: public_html/sobze/suivi_academique/
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Tag Docker image as production
         run: |
