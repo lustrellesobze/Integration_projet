@@ -276,39 +276,28 @@ jobs:
               }
             });
             fs.writeFileSync('angular.json', JSON.stringify(cfg, null, 2));
-            console.log('Budgets Angular mis a jour : warning=5mb, error=10mb');
           "
 
       - name: Build Angular (production)
         working-directory: ./frontend
-        run: npx ng build --configuration production
+        # AJOUT UNIQUE : --base-href pour o2switch
+        run: npx ng build --configuration production --base-href /suivi_academique/
 
       - name: Detect Angular dist folder name
         working-directory: ./frontend
         id: detect-dist
         run: |
-          # Affiche la structure exacte pour debug
-          echo "=== Structure de dist/ ==="
-          ls -R dist/
-          # Detecte automatiquement le nom du dossier genere par Angular
           APP_DIR=$(ls dist/)
-          echo "app_dir=$APP_DIR" >> $GITHUB_OUTPUT
-          echo "Dossier Angular detecte : $APP_DIR"
-          # Verifie si browser/ existe
           if [ -d "dist/$APP_DIR/browser" ]; then
             echo "browser_path=dist/$APP_DIR/browser" >> $GITHUB_OUTPUT
-            echo "browser existe : dist/$APP_DIR/browser/"
           else
             echo "browser_path=dist/$APP_DIR" >> $GITHUB_OUTPUT
-            echo "Pas de browser/, utilise dist/$APP_DIR/"
           fi
 
       - name: Archive Frontend Build (browser only)
         uses: actions/upload-artifact@v4
         with:
           name: angular-dist
-          # On archive uniquement le contenu de browser/ (fichiers HTML/JS/CSS)
-          # qui seront servis directement par o2switch
           path: frontend/${{ steps.detect-dist.outputs.browser_path }}/
 
   # ─────────────────────────────────────────────
@@ -360,9 +349,7 @@ jobs:
     name: 🚀 Deploy — Staging (o2switch FTP)
     runs-on: ubuntu-latest
     needs: [frontend-build, devsecops]
-    if: |
-      github.event_name == 'push' &&
-      github.ref == 'refs/heads/develop'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
 
     steps:
       - name: Checkout code
@@ -374,13 +361,6 @@ jobs:
           name: angular-dist
           path: ./dist-frontend
 
-      - name: Verify downloaded frontend files
-        run: |
-          echo "=== Fichiers frontend telecharges ==="
-          ls -la ./dist-frontend/
-          echo "Ces fichiers (index.html, *.js, *.css) iront dans suivi_academique/"
-
-      # ── Déploiement Backend Laravel via FTP ──
       - name: Deploy Backend via FTP (Staging)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -388,17 +368,14 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./Backend/
-          server-dir: Backend_Code/
+          # AJOUT UNIQUE : Chemin complet public_html
+          server-dir: public_html/sobze/suivi_academique/Backend_Code/
           exclude: |
             **/vendor/**
             **/.env
             **/.git*
-            **/node_modules/**
             **/tests/**
 
-      # ── Déploiement Frontend Angular via FTP ──
-      # L'artifact contient déjà uniquement le contenu de browser/
-      # (index.html, *.js, *.css) → on les dépose directement dans suivi_academique/
       - name: Deploy Frontend via FTP (Staging)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -406,18 +383,8 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist-frontend/
+          # AJOUT UNIQUE : Chemin complet public_html
           server-dir: public_html/sobze/suivi_academique/
-
-      - name: Notify staging deployed
-        run: |
-          echo "=================================================="
-          echo "  DEPLOIEMENT STAGING TERMINE — sobze.cdwfs.net"
-          echo "=================================================="
-          echo "URL      : https://sobze.cdwfs.net/suivi_academique"
-          echo "Commit   : ${{ github.sha }}"
-          echo "Branche  : develop"
-          echo "Heure    : $(date '+%Y-%m-%d %H:%M:%S')"
-          echo "=================================================="
 
   # ─────────────────────────────────────────────
   # JOB 7 : Déploiement Production (master → o2switch)
@@ -426,9 +393,7 @@ jobs:
     name: 🚀 Deploy — Production (o2switch FTP)
     runs-on: ubuntu-latest
     needs: [frontend-build, devsecops]
-    if: |
-      github.event_name == 'push' &&
-      github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
 
     steps:
       - name: Checkout code
@@ -440,13 +405,6 @@ jobs:
           name: angular-dist
           path: ./dist-frontend
 
-      - name: Verify downloaded frontend files
-        run: |
-          echo "=== Fichiers frontend telecharges ==="
-          ls -la ./dist-frontend/
-          echo "Ces fichiers (index.html, *.js, *.css) iront dans suivi_academique/"
-
-      # ── Déploiement Backend Laravel via FTP ──
       - name: Deploy Backend via FTP (Production)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -454,17 +412,13 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./Backend/
-          server-dir: Backend_Code/
+          server-dir: public_html/sobze/suivi_academique/Backend_Code/
           exclude: |
             **/vendor/**
             **/.env
             **/.git*
-            **/node_modules/**
             **/tests/**
 
-      # ── Déploiement Frontend Angular via FTP ──
-      # L'artifact contient déjà uniquement le contenu de browser/
-      # (index.html, *.js, *.css) → on les dépose directement dans suivi_academique/
       - name: Deploy Frontend via FTP (Production)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -474,31 +428,11 @@ jobs:
           local-dir: ./dist-frontend/
           server-dir: public_html/sobze/suivi_academique/
 
-      # ── Tag Docker production ──
-      - name: Login to DockerHub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Tag Docker image as production
         run: |
           docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          docker tag \
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:production
+          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:production
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:production
-
-      - name: Notify production deployed
-        run: |
-          echo "=================================================="
-          echo "  DEPLOIEMENT PRODUCTION TERMINE — sobze.cdwfs.net"
-          echo "=================================================="
-          echo "URL      : https://sobze.cdwfs.net/suivi_academique"
-          echo "Commit   : ${{ github.sha }}"
-          echo "Branche  : master"
-          echo "Heure    : $(date '+%Y-%m-%d %H:%M:%S')"
-          echo "=================================================="
 
   # ─────────────────────────────────────────────
   # BONUS 2 : Dashboard KPI — Rapport pipeline
@@ -514,22 +448,13 @@ jobs:
         run: |
           echo "=================================================="
           echo "       RAPPORT KPI — PIPELINE CI/CD"
-          echo "       Suivi Academique — sobze.cdwfs.net"
           echo "=================================================="
           echo "Date         : $(date '+%Y-%m-%d %H:%M:%S')"
           echo "Branche      : ${{ github.ref_name }}"
-          echo "Commit SHA   : ${{ github.sha }}"
-          echo "Auteur       : ${{ github.actor }}"
-          echo "Repository   : ${{ github.repository }}"
-          echo "--------------------------------------------------"
-          echo "STATUTS DES JOBS"
           echo "--------------------------------------------------"
           echo "CI Laravel      : ${{ needs.laravel-ci.result }}"
           echo "Docker Build    : ${{ needs.build-docker.result }}"
           echo "Security        : ${{ needs.security.result }}"
           echo "DevSecOps       : ${{ needs.devsecops.result }}"
           echo "Frontend Build  : ${{ needs.frontend-build.result }}"
-          echo "--------------------------------------------------"
-          echo "Image Docker : ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
-          echo "URL Deploy   : https://sobze.cdwfs.net/suivi_academique"
           echo "=================================================="
