@@ -1,4 +1,4 @@
-name: Laravel CI & Docker
+name: Laravel CI & Docker — Suivi Académique
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
     name: 🧪 CI Laravel & Tests
     runs-on: ubuntu-latest
 
-    services: 
+    services:
       mysql:
         image: mysql:8.0
         env:
@@ -34,12 +34,12 @@ jobs:
           --health-retries=3
 
     steps:
-      - name: Checkout code // 
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup PHP // 
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
@@ -50,15 +50,15 @@ jobs:
         working-directory: ./Backend
         run: php -r "file_exists('.env') || copy('.env.example', '.env');"
 
-      - name: Install Dependencies //
+      - name: Install Dependencies
         working-directory: ./Backend
         run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
 
-      - name: PHP Pint - Linting  // 
+      - name: PHP Pint - Linting
         working-directory: ./Backend
         run: vendor/bin/pint --test
 
-      - name: Secret Scanning (Gitleaks) //
+      - name: Secret Scanning (Gitleaks)
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -66,7 +66,7 @@ jobs:
 
       - name: Security Check Dependencies
         working-directory: ./Backend
-        run: composer audit || true // Vérifie si les bibliothèques ont des failles de sécurité connues.
+        run: composer audit || true
 
       - name: Generate key
         working-directory: ./Backend
@@ -76,7 +76,7 @@ jobs:
         working-directory: ./Backend
         run: chmod -R 777 storage bootstrap/cache
 
-      - name: Execute tests (PHPUnit) //
+      - name: Execute tests (PHPUnit)
         working-directory: ./Backend
         env:
           DB_CONNECTION: mysql
@@ -91,7 +91,7 @@ jobs:
   # JOB 2 : Build + Push DockerHub + Scan Trivy
   # ─────────────────────────────────────────────
   build-docker:
-    name: 🐳 Build, Scan & Push Docker Image // 
+    name: 🐳 Build, Scan & Push Docker Image
     runs-on: ubuntu-latest
     needs: laravel-ci
 
@@ -108,7 +108,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build Docker Image // 
+      - name: Build Docker Image
         run: |
           docker build \
             --target production \
@@ -116,7 +116,7 @@ jobs:
             --tag ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest \
             ./Backend
 
-      - name: Verify container starts // Le pipeline lance mon conteneur et vérfie si docker a un probleme de configuration interne
+      - name: Verify container starts
         run: |
           docker run -d --name test-container \
             -e APP_KEY=base64:dGVzdGtleWZvcmNpY2Rwd== \
@@ -131,7 +131,7 @@ jobs:
           docker stop test-container
           docker rm test-container
 
-      - name: Trivy Scan Docker Image // l'analyse des vulnerabilité critique
+      - name: Trivy Scan Docker Image
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
@@ -141,8 +141,7 @@ jobs:
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
 
-      # ✅ Push sur toutes les branches du workflow (plus seulement master)
-      - name: Push to DockerHub // l'image est envoyée sur le cloud Docker Hub pour être prête au déploiement.
+      - name: Push to DockerHub
         if: |
           github.event_name == 'push' &&
           (
@@ -181,8 +180,7 @@ jobs:
           composer install --no-interaction --prefer-dist --no-dev
           composer audit || true
 
-      # ✅ TruffleHog : push ET pull_request, avec base adaptée selon l'événement
-      - name: TruffleHog Secret Detection // outil de Sécurité qui fouille l'historique complet de mon dépôt
+      - name: TruffleHog Secret Detection
         if: github.event_name == 'push' || github.event_name == 'pull_request'
         uses: trufflesecurity/trufflehog@main
         with:
@@ -191,8 +189,9 @@ jobs:
           head: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           extra_args: --only-verified
         continue-on-error: true
-   # ─────────────────────────────────────────────
-  # JOB 4 : SonarCloud Security Scan
+
+  # ─────────────────────────────────────────────
+  # JOB 4 : SonarCloud Analysis
   # ─────────────────────────────────────────────
   sonarcloud:
     name: 🔍 SonarCloud Analysis
@@ -216,7 +215,6 @@ jobs:
         working-directory: ./Backend
         run: composer install --no-interaction --prefer-dist
 
-      # ✅ Copie du .env AVANT key:generate
       - name: Copy .env
         working-directory: ./Backend
         run: php -r "file_exists('.env') || copy('.env.example', '.env');"
@@ -238,8 +236,49 @@ jobs:
         with:
           projectBaseDir: ./Backend
 
-# ─────────────────────────────────────────────
-  # BONUS 1 : DevSecOps — SonarCloud & OWASP
+  # ─────────────────────────────────────────────
+  # JOB 5 : Build Angular Frontend
+  # ─────────────────────────────────────────────
+  frontend-build:
+    name: 🌐 Build Frontend (Angular)
+    runs-on: ubuntu-latest
+    needs: laravel-ci
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: ./frontend/package-lock.json
+
+      - name: Install npm dependencies
+        working-directory: ./frontend
+        run: npm install
+
+      - name: Build Angular (production)
+        working-directory: ./frontend
+        run: npx ng build --configuration production
+        # Le build Angular génère les fichiers dans ./frontend/dist/
+
+      - name: List dist output
+        working-directory: ./frontend
+        run: |
+          echo "📂 Contenu du dossier dist :"
+          ls -R dist/
+
+      - name: Archive Frontend Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: angular-dist
+          path: frontend/dist/
+          # Conserve le build pour le job de déploiement
+
+  # ─────────────────────────────────────────────
+  # BONUS 1 : DevSecOps — OWASP Dependency Check
   # ─────────────────────────────────────────────
   devsecops:
     name: 🛡️ DevSecOps — OWASP Dependency Check
@@ -264,7 +303,7 @@ jobs:
       - name: OWASP Dependency Check
         uses: dependency-check/Dependency-Check_Action@main
         with:
-          project: 'Integration_projet'
+          project: 'SuiviAcademique'
           path: './Backend'
           format: 'HTML'
           out: 'reports'
@@ -279,56 +318,130 @@ jobs:
           name: owasp-report
           path: reports/
           retention-days: 7
-          # ─────────────────────────────────────────────
-  # BONUS 2 : Multi-environnement dev/staging/prod
+
+  # ─────────────────────────────────────────────
+  # JOB 6 : Déploiement Staging (develop → o2switch)
   # ─────────────────────────────────────────────
   deploy-staging:
-    name: 🚀 Deploy — Staging
+    name: 🚀 Deploy — Staging (o2switch FTP)
     runs-on: ubuntu-latest
-    needs: devsecops
-    if: github.ref == 'refs/heads/develop'
+    needs: [frontend-build, devsecops]
+    if: |
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/develop'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Login to DockerHub
-        uses: docker/login-action@v3
+      - name: Download Angular Build
+        uses: actions/download-artifact@v4
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          name: angular-dist
+          path: ./dist-frontend
 
-      - name: Tag image as staging
+      - name: List downloaded frontend files
         run: |
-          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          docker tag \
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:staging
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:staging
+          echo "📂 Fichiers frontend prêts pour le déploiement :"
+          ls -R ./dist-frontend/
+
+      # ── Déploiement Backend Laravel via FTP ──
+      - name: Deploy Backend via FTP (Staging)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./Backend/
+          server-dir: Backend_Code/
+          exclude: |
+            **/vendor/**
+            **/.env
+            **/.git*
+            **/node_modules/**
+            **/tests/**
+
+      # ── Déploiement Frontend Angular via FTP ──
+      - name: Deploy Frontend via FTP (Staging)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist-frontend/
+          server-dir: public_html/sobze/suivi_academique/
 
       - name: Notify staging deployed
         run: |
-          echo "✅ Image staging déployée"
-          echo "🔗 Commit : ${{ github.sha }}"
-          echo "🌿 Branche : develop"
+          echo "=================================================="
+          echo "  ✅ DÉPLOIEMENT STAGING TERMINÉ — sobze.cdwfs.net"
+          echo "=================================================="
+          echo "🔗 URL      : https://sobze.cdwfs.net"
+          echo "🔗 Commit   : ${{ github.sha }}"
+          echo "🌿 Branche  : develop"
+          echo "🕒 Heure    : $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "=================================================="
 
+  # ─────────────────────────────────────────────
+  # JOB 7 : Déploiement Production (master → o2switch)
+  # ─────────────────────────────────────────────
   deploy-production:
-    name: 🚀 Deploy — Production
+    name: 🚀 Deploy — Production (o2switch FTP)
     runs-on: ubuntu-latest
-    needs: devsecops
-    if: github.ref == 'refs/heads/master'
+    needs: [frontend-build, devsecops]
+    if: |
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/master'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Download Angular Build
+        uses: actions/download-artifact@v4
+        with:
+          name: angular-dist
+          path: ./dist-frontend
+
+      - name: List downloaded frontend files
+        run: |
+          echo "📂 Fichiers frontend prêts pour la production :"
+          ls -R ./dist-frontend/
+
+      # ── Déploiement Backend Laravel via FTP ──
+      - name: Deploy Backend via FTP (Production)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./Backend/
+          server-dir: Backend_Code/
+          exclude: |
+            **/vendor/**
+            **/.env
+            **/.git*
+            **/node_modules/**
+            **/tests/**
+
+      # ── Déploiement Frontend Angular via FTP ──
+      - name: Deploy Frontend via FTP (Production)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist-frontend/
+          server-dir: public_html/sobze/suivi_academique/
+
+      # ── Tag Docker production ──
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Tag image as production
+      - name: Tag Docker image as production
         run: |
           docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           docker tag \
@@ -338,17 +451,22 @@ jobs:
 
       - name: Notify production deployed
         run: |
-          echo "✅ Image production déployée"
-          echo "🔗 Commit : ${{ github.sha }}"
-          echo "🌿 Branche : master"
+          echo "=================================================="
+          echo "  ✅ DÉPLOIEMENT PRODUCTION TERMINÉ — sobze.cdwfs.net"
+          echo "=================================================="
+          echo "🔗 URL      : https://sobze.cdwfs.net"
+          echo "🔗 Commit   : ${{ github.sha }}"
+          echo "🌿 Branche  : master"
+          echo "🕒 Heure    : $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "=================================================="
 
   # ─────────────────────────────────────────────
-  # BONUS 3 : Dashboard KPI — Rapport pipeline
+  # BONUS 2 : Dashboard KPI — Rapport pipeline
   # ─────────────────────────────────────────────
   kpi-report:
     name: 📊 KPI — Pipeline Report
     runs-on: ubuntu-latest
-    needs: [laravel-ci, build-docker, security, devsecops]
+    needs: [laravel-ci, build-docker, security, devsecops, frontend-build]
     if: always()
 
     steps:
@@ -356,6 +474,7 @@ jobs:
         run: |
           echo "=================================================="
           echo "       RAPPORT KPI — PIPELINE CI/CD"
+          echo "       Suivi Académique — sobze.cdwfs.net"
           echo "=================================================="
           echo "📅 Date         : $(date '+%Y-%m-%d %H:%M:%S')"
           echo "🌿 Branche      : ${{ github.ref_name }}"
@@ -365,10 +484,12 @@ jobs:
           echo "--------------------------------------------------"
           echo "📊 STATUTS DES JOBS"
           echo "--------------------------------------------------"
-          echo "🧪 CI Laravel   : ${{ needs.laravel-ci.result }}"
-          echo "🐳 Docker Build : ${{ needs.build-docker.result }}"
-          echo "🔒 Security     : ${{ needs.security.result }}"
-          echo "🛡️  DevSecOps    : ${{ needs.devsecops.result }}"
+          echo "🧪 CI Laravel      : ${{ needs.laravel-ci.result }}"
+          echo "🐳 Docker Build    : ${{ needs.build-docker.result }}"
+          echo "🔒 Security        : ${{ needs.security.result }}"
+          echo "🛡️  DevSecOps       : ${{ needs.devsecops.result }}"
+          echo "🌐 Frontend Build  : ${{ needs.frontend-build.result }}"
           echo "--------------------------------------------------"
           echo "🖼️  Image Docker : ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          echo "🌍 URL Déploiement : https://sobze.cdwfs.net"
           echo "=================================================="
