@@ -232,3 +232,45 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           projectBaseDir: ./Backend
+
+# ─────────────────────────────────────────────
+  # BONUS 1 : DevSecOps — SonarCloud & OWASP
+  # ─────────────────────────────────────────────
+  devsecops:
+    name: 🛡️ DevSecOps — OWASP Dependency Check
+    runs-on: ubuntu-latest
+    needs: security
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, zip, pdo_mysql
+          coverage: none
+
+      - name: Install Dependencies
+        working-directory: ./Backend
+        run: composer install --no-interaction --prefer-dist --no-dev
+
+      - name: OWASP Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'Integration_projet'
+          path: './Backend'
+          format: 'HTML'
+          out: 'reports'
+          args: >
+            --enableRetired
+            --disableYarnAudit
+        continue-on-error: true
+
+      - name: Upload OWASP Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-report
+          path: reports/
+          retention-days: 7
