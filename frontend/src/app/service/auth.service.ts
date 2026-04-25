@@ -3,13 +3,15 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Personnel } from '../models/personnel';
+import api from './api';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
 
-  private apiUrl = "http://localhost:8000/api"; // ton API Laravel
+  // On récupère directement l’URL de base depuis la config centralisée Axios
+  private apiUrl = api.defaults.baseURL;
 
   constructor(private http: HttpClient) {}
 
@@ -17,17 +19,15 @@ export class AuthService {
   // LOGIN
   // ========================
   login(login_pers: string, pwd_pers: string): Observable<any> {
-
     const body = {
-      login_pers: login_pers,
-      pwd_pers: pwd_pers
+      login_pers,
+      pwd_pers
     };
 
     return this.http.post(`${this.apiUrl}/login`, body).pipe(
       tap((res: any) => {
-        // Stocker le token dans localStorage
-        localStorage.setItem("token", res.access_token);
-        localStorage.setItem("user", JSON.stringify(res.personnel));
+        localStorage.setItem('token', res.access_token);
+        localStorage.setItem('user', JSON.stringify(res.personnel));
       })
     );
   }
@@ -36,17 +36,16 @@ export class AuthService {
   // LOGOUT
   // ========================
   logout(): Observable<any> {
-
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem('token');
 
     const headers = new HttpHeaders({
-      "Authorization": `Bearer ${token}`
+      Authorization: `Bearer ${token}`
     });
 
     return this.http.post(`${this.apiUrl}/logout`, {}, { headers }).pipe(
       tap(() => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
       })
     );
   }
@@ -55,14 +54,14 @@ export class AuthService {
   // Vérifier si connecté
   // ========================
   isLogged(): boolean {
-    return !!localStorage.getItem("token");
+    return !!localStorage.getItem('token');
   }
 
   // ========================
   // Récupérer l'utilisateur connecté
   // ========================
   getUser(): Personnel | null {
-    const u = localStorage.getItem("user");
+    const u = localStorage.getItem('user');
     return u ? JSON.parse(u) : null;
   }
 }

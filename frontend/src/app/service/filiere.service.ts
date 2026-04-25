@@ -3,21 +3,24 @@ import { map, Observable } from 'rxjs';
 import { Filiere } from '../models/filiere';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { AuthService } from './auth.service';
+import api from './api';
 
 @Injectable({
   providedIn: 'root'
 })
 export class FiliereService {
 
-  private apiUrl = 'http://localhost:8000/api';
+  // URL centralisée depuis api.ts
+  private apiUrl = api.defaults.baseURL;
 
   constructor(private http: HttpClient, private authService: AuthService) {}
 
   private getAuthHeaders(): { headers: HttpHeaders } {
-    const token = localStorage.getItem('token'); // récupère le token stocké
+    const token = localStorage.getItem('token');
+
     return {
       headers: new HttpHeaders({
-        'Authorization': `Bearer ${token}`
+        Authorization: `Bearer ${token}`
       })
     };
   }
@@ -28,7 +31,10 @@ export class FiliereService {
       .set('page', page.toString())
       .set('per_page', perPage.toString());
 
-    return this.http.get<any>(`${this.apiUrl}/filieres`, { ...this.getAuthHeaders(), params });
+    return this.http.get<any>(`${this.apiUrl}/filieres`, {
+      ...this.getAuthHeaders(),
+      params
+    });
   }
 
   save(filiere: Filiere): Observable<Filiere> {
@@ -42,8 +48,11 @@ export class FiliereService {
   }
 
   update(filiere: Filiere): Observable<Filiere> {
-    return this.http.put<Filiere>(`${this.apiUrl}/filieres/${filiere.code_filiere}`, filiere, this.getAuthHeaders())
-      .pipe(map((response: any) => response));
+    return this.http.put<Filiere>(
+      `${this.apiUrl}/filieres/${filiere.code_filiere}`,
+      filiere,
+      this.getAuthHeaders()
+    ).pipe(map((response: any) => response));
   }
 
   // Recherche avec token et pagination
@@ -53,19 +62,19 @@ export class FiliereService {
       .set('page', page.toString())
       .set('per_page', perPage.toString());
 
-    return this.http.get<any>(`${this.apiUrl}/filieres/search`, { ...this.getAuthHeaders(), params });
+    return this.http.get<any>(`${this.apiUrl}/filieres/search`, {
+      ...this.getAuthHeaders(),
+      params
+    });
   }
-
-  // --- NOUVELLES MÉTHODES D'EXPORTATION ---
 
   /**
    * Télécharge la liste des filières en PDF
    */
   exportPdf(): Observable<Blob> {
-    const headers = this.getAuthHeaders().headers;
     return this.http.get(`${this.apiUrl}/filieres/export/pdf`, {
-      headers: headers,
-      responseType: 'blob' // Obligatoire pour récupérer un fichier binaire
+      headers: this.getAuthHeaders().headers,
+      responseType: 'blob'
     });
   }
 
@@ -73,10 +82,9 @@ export class FiliereService {
    * Télécharge la liste des filières en Excel
    */
   exportExcel(): Observable<Blob> {
-    const headers = this.getAuthHeaders().headers;
     return this.http.get(`${this.apiUrl}/filieres/export/excel`, {
-      headers: headers,
-      responseType: 'blob' // Obligatoire pour récupérer un fichier binaire
+      headers: this.getAuthHeaders().headers,
+      responseType: 'blob'
     });
   }
 }
