@@ -19,8 +19,8 @@ return [
 
     // On autorise localhost pour le dev et ton domaine pour la prod
     'allowed_origins' => [
-        'http://localhost:4200', 
-        'https://sobze.cdwfs.net'
+        'http://localhost:4200',
+        'https://sobze.cdwfs.net',
     ],
 
     'allowed_origins_patterns' => [],
