@@ -1,21 +1,20 @@
 import axios, { InternalAxiosRequestConfig } from 'axios';
 
 /**
- * DETECTION DYNAMIQUE DE L'URL
- * On vérifie si l'application tourne sur 'localhost' ou sur le domaine de production.
+ * LOGIQUE DE DÉTECTION DE L'ENVIRONNEMENT
  */
-const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
-// Cette URL sera utilisée si aucune variable d'environnement n'est trouvée
-const FALLBACK_URL = isLocalhost 
-    ? 'http://localhost:8000/api' 
-    : 'https://sobze.cdwfs.net/api';
+// On définit l'URL de production en dur pour éviter tout problème de cache ou de .env manquant
+const PROD_URL = 'https://sobze.cdwfs.net/api';
+const DEV_URL = 'http://localhost:8000/api';
 
-// On tente de récupérer la variable Vite, sinon on utilise le FALLBACK
-const API_URL = (import.meta as any).env?.VITE_API_URL || FALLBACK_URL;
+const FINAL_API_URL = isLocal ? DEV_URL : PROD_URL;
+
+console.log(`%c [CONFIG] API configurée sur : ${FINAL_API_URL}`, 'color: #FF9800; font-weight: bold;');
 
 const api = axios.create({
-    baseURL: API_URL,
+    baseURL: FINAL_API_URL,
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -23,18 +22,19 @@ const api = axios.create({
 });
 
 /**
- * Intercepteur de requête
- * Utile pour le debug et pour injecter le token d'authentification si nécessaire
+ * INTERCEPTEUR DE REQUÊTE
  */
 api.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-        const base = config.baseURL ?? '';
-        const path = config.url ?? '';
-        
-        // Affichage stylisé dans la console pour faciliter le debug en production
-        console.log(`%c [API CALL] %c ${base}${path}`, 'color: white; background: #2196F3; font-weight: bold;', 'color: #2196F3;');
+        // Sécurité : On force la baseURL au cas où un service essaierait de la modifier
+        config.baseURL = FINAL_API_URL;
 
-        // Si tu as un token dans le localStorage, tu peux l'ajouter ici automatiquement
+        const fullUrl = `${config.baseURL}${config.url ?? ''}`;
+        
+        // Log pour confirmer l'URL appelée dans la console du navigateur
+        console.log(`%c [SEND] %c ${fullUrl}`, 'color: white; background: #4CAF50; font-weight: bold;', 'color: #4CAF50;');
+
+        // Injection automatique du token pour les requêtes authentifiées
         const token = localStorage.getItem('token');
         if (token && config.headers) {
             config.headers.Authorization = `Bearer ${token}`;
