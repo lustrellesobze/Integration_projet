@@ -259,6 +259,11 @@ jobs:
         working-directory: ./frontend
         run: npm install
 
+      # --- ÉTAPE AJOUTÉE ICI ---
+      - name: Create .env file for Vite
+        working-directory: ./frontend
+        run: echo "VITE_API_URL=https://sobze.cdwfs.net/api" > .env
+
       - name: Patch Angular budget limits
         working-directory: ./frontend
         run: |
@@ -298,7 +303,6 @@ jobs:
         with:
           name: angular-dist
           path: frontend/${{ steps.detect-dist.outputs.browser_path }}/
-
   # ─────────────────────────────────────────────
   # BONUS 1 : DevSecOps — OWASP Dependency Check
   # ─────────────────────────────────────────────
